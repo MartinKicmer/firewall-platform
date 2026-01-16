@@ -1,0 +1,3 @@
+/home/pi/bakalarka/backend/firewall/firewall-service/build/CMakeFiles/firewallService.dir
+/home/pi/bakalarka/backend/firewall/firewall-service/build/CMakeFiles/edit_cache.dir
+/home/pi/bakalarka/backend/firewall/firewall-service/build/CMakeFiles/rebuild_cache.dir
