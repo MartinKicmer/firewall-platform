@@ -1,2 +1,2 @@
-interface: eth0,input
+interface: enp10s0,input
 interface: eth1,output

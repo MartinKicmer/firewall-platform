@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include <vector>
 #include <thread>
@@ -6,6 +7,10 @@
 #include <array>
 #include <sstream>
 #include <iostream>
+#include "RawSocket.h"
+#include "PacketParser.h"
+#include "FilterRuleList.h"
+#include <atomic>
 class FirewallService {
 public:
     struct Interface {
@@ -24,20 +29,29 @@ public:
             return o;
 
         }
+
+        void bindFirstActiveInterface(RawSocket& rsocket) {
+            for(const auto& i : this->activeInterfaces) {
+                if(i.state == "input") {
+                    rsocket.bindSocket(i.name);
+                    break;
+                }
+            }
+        }
     };
-    FirewallService() : config(nullptr),socketDescriptor(-1) {
-        std::memset(BUFFER,0,BUFSIZ * sizeof(uint8_t));
+    FirewallService() : config(nullptr) {
+        this->rawSocket.initSocket();
+        this->filterList = std::make_shared<FilterRuleList>();
+        std::shared_ptr<L2Rule> l2rule = std::make_shared<L2Rule>(false,10,"none","ff:ff:ff:ff:ff:ff");
+        this->filterList->addRule(1,l2rule);
     }
     void run(const std::string& standardPath);
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
-    void createEthernetSocket();
     void packetBlockerCommunicator();    
-
-    
     std::unique_ptr<Config> config;
     std::thread packetBlockerT;
-    int socketDescriptor;
-    uint8_t BUFFER[BUFSIZ];
+    RawSocket rawSocket;
+    std::shared_ptr<FilterRuleList> filterList;
 
 };

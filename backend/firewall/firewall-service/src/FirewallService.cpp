@@ -4,12 +4,25 @@
 
 void FirewallService::run(const std::string& standardPath) {
     try {
-
-            this->config = this->loadFromConfig(standardPath);
+        this->config = this->loadFromConfig(standardPath);
+        this->config->bindFirstActiveInterface(this->rawSocket);
         std::cout << this->config << std::endl;
-        while(1) {
-            //std::cout << "Ahoj\n";
+       while(1) {
+        this->rawSocket.readFromSocket();
+        auto& data = this->rawSocket.getReadData();
+        
+        auto packetParser = std::make_shared<PacketParser>(data);
+        this->filterList->setParser(packetParser);
+        
+        auto blockingRule = this->filterList->checkAllRules(data);
+        
+        if(blockingRule != nullptr) {
+            std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
+            this->filterList->printFilterRuleInfo(blockingRule);
+        } else {
+            std::cout << "Packet passed" << std::endl;
         }
+}
     } catch( const std::exception& e) {
         std::cerr << e.what() << std::endl;
         std::exit(EXIT_FAILURE);

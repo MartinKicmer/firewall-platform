@@ -9,5 +9,15 @@ include_directories(${CMAKE_SOURCE_DIR}/headers)
 add_executable(firewallService
   src/main.cpp
   src/FirewallService.cpp
+  src/RawSocket.cpp
+  src/PacketParser.cpp
+  src/FilterRule.cpp
+  src/FilterRuleList.cpp
   headers/FirewallService.h
+  headers/RawSocket.h
+  headers/EthernetFrame.h
+  headers/PacketParser.h
+  headers/FilterRule.h
+  headers/FilterRuleList.h
+  headers/Rules.h
 )
