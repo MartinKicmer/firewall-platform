@@ -14,3 +14,18 @@ bool FilterRule::canPass(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data)
 
     return true;
 }
+
+std::string FilterRule::serializeToJSON() const {
+    nlohmann::json j;
+    j["ID"] = this->ID;
+    if (auto l2 = std::dynamic_pointer_cast<L2Rule>(this->rule)) {
+        j["ruleType"] = "L2";
+        j["data"] = {
+            {"permit", l2->permit},
+            {"limitCount", l2->limitCount},
+            {"source", l2->source},
+            {"dest", l2->dest}
+        };
+    }
+    return j.dump();
+}

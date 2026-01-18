@@ -3,6 +3,9 @@ project(firewallService)
 
 set(CMAKE_CXX_STANDARD 23)
 
+find_package(nlohmann_json REQUIRED)
+
+
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/headers)
 
@@ -21,3 +24,5 @@ add_executable(firewallService
   headers/FilterRuleList.h
   headers/Rules.h
 )
+
+target_link_libraries(firewallService PRIVATE nlohmann_json::nlohmann_json)
