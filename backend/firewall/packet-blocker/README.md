@@ -1,0 +1,3 @@
+# pouziti na vrstvach
+- L2:
+    packet-blocker -rid 1 -l L2 -action deny -smac ... -dmac ... 
