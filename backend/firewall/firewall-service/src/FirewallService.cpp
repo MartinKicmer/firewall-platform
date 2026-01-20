@@ -17,10 +17,10 @@ void FirewallService::run(const std::string& standardPath) {
         auto blockingRule = this->filterList->checkAllRules(data);
         
         if(blockingRule != nullptr) {
-            std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
-            this->filterList->printFilterRuleInfo(blockingRule);
+            //std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
+            //this->filterList->printFilterRuleInfo(blockingRule);
         } else {
-            std::cout << "Packet passed" << std::endl;
+            //std::cout << "Packet passed" << std::endl;
         }
 }
     } catch( const std::exception& e) {
@@ -70,4 +70,25 @@ std::unique_ptr<FirewallService::Config> FirewallService::loadFromConfig(const s
         throw std::runtime_error("Could not open config");
     }
 
+}
+
+void FirewallService::startPacketBlockerCommunication() {
+    try {
+        std::cout << "Communication thread started\n";
+        MQConnector mqconnector("/firewallQueue");
+        mqconnector.create();
+        std::cout << "Message queue created\n";
+        while(true) {
+            const auto& [end,data] = mqconnector.recieveData();
+            if(end) {
+                std::cout << "Communication thread ended\n";
+                break;
+            }
+            std::cout << data << std::endl;
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::cerr << "Ending communication thread\n";
+        return;
+    }
 }

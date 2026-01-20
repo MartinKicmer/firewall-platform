@@ -10,6 +10,7 @@
 #include "RawSocket.h"
 #include "PacketParser.h"
 #include "FilterRuleList.h"
+#include "MQConnector.h"
 #include <atomic>
 class FirewallService {
 public:
@@ -44,11 +45,19 @@ public:
         this->filterList = std::make_shared<FilterRuleList>();
         std::shared_ptr<L2Rule> l2rule = std::make_shared<L2Rule>(false,10,"none","ff:ff:ff:ff:ff:ff");
         this->filterList->addRule(1,l2rule);
+
+        this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
+        
+    }
+    ~FirewallService() {
+        if(this->packetBlockerT.joinable()) {
+            this->packetBlockerT.join();
+        }
     }
     void run(const std::string& standardPath);
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
-    void packetBlockerCommunicator();    
+    void startPacketBlockerCommunication();    
     std::unique_ptr<Config> config;
     std::thread packetBlockerT;
     RawSocket rawSocket;
