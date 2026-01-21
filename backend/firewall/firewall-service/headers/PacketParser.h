@@ -10,6 +10,8 @@
 #include <iostream>
 #include <memory>
 #include "EthernetFrame.h"
+#include "IPv4Datagram.h"
+#include <netinet/ip.h>
 #include <array>
 
 class PacketParser {
@@ -18,6 +20,7 @@ public:
     PacketParser(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data ) 
     : readData(data) {}
     std::shared_ptr<EthernetFrame> parseEthernetFrame();
+    std::shared_ptr<IPv4Datagram>  parseIPv4Datagram();
     
 private:
     std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& readData;

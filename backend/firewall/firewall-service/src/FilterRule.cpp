@@ -10,6 +10,9 @@ bool FilterRule::canPass() {
             return l2rule->permit; 
         }
     }
+    if(auto l3rule = std::dynamic_pointer_cast<L2Rule>(this->rule)) {
+        
+    }
     
     return true;
 }

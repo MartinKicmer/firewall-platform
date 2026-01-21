@@ -26,3 +26,47 @@ std::shared_ptr<EthernetFrame> PacketParser::parseEthernetFrame() {
 
     return std::make_shared<EthernetFrame>(destMAC, srcMAC, type, payloadStart,payloadSize);
 }
+
+std::shared_ptr<IPv4Datagram> PacketParser::parseIPv4Datagram() {
+    auto ethFrame = this->parseEthernetFrame();
+    
+    if(ethFrame->getEtherType() != 0x0800) {
+        throw std::runtime_error("Could not parse IPv4 because data is not in IPv4 format\n");
+    }
+
+    auto payload = ethFrame->getPayload();
+    std::size_t totalPayloadLen =  payload.size();
+    const uint8_t* ipv4Data = &payload[0];
+    if(totalPayloadLen < sizeof(struct iphdr)) {
+        throw std::runtime_error("Data too short for IPv4 header\n");
+    }
+    const struct iphdr* ipHeader = reinterpret_cast<const struct iphdr*>(ipv4Data);
+    std::size_t headerSize = ipHeader->ihl * 4;
+    
+    if (totalPayloadLen < headerSize) {
+        throw std::runtime_error("Data too short for IPv4 header with options\n");
+    }
+    char srcIp[INET_ADDRSTRLEN];
+    char destIp[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(ipHeader->saddr), srcIp, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ipHeader->daddr), destIp, INET_ADDRSTRLEN);
+
+    uint16_t totalLenFromHeader = ntohs(ipHeader->tot_len);
+    std::size_t actualPayloadSize = (totalLenFromHeader > headerSize) ? (totalLenFromHeader - headerSize) : 0;
+
+    const uint8_t* ipv4PayloadStart = ipv4Data + headerSize;
+    
+    return std::make_shared<IPv4Datagram>(
+        static_cast<uint8_t>(ipHeader->version),
+        static_cast<uint8_t>(ipHeader->ihl),
+        ipHeader->tos,
+        ntohs(ipHeader->id),
+        ipHeader->ttl,
+        ipHeader->protocol,
+        ntohs(ipHeader->check),
+        std::string(srcIp),
+        std::string(destIp),
+        ipv4PayloadStart,
+        actualPayloadSize
+    );
+}
