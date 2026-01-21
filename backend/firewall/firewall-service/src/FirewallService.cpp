@@ -13,14 +13,15 @@ void FirewallService::run(const std::string& standardPath) {
         
         auto packetParser = std::make_shared<PacketParser>(data);
         this->filterList->setParser(packetParser);
+
+        packetParser->printL2Layer();
         
         auto blockingRule = this->filterList->checkAllRules();
-        
         if(blockingRule != nullptr) {
             std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
             this->filterList->printFilterRuleInfo(blockingRule);
         } else {
-            //std::cout << "Packet passed" << std::endl;
+            std::cout << "Packet passed" << std::endl;
         }
 }
     } catch( const std::exception& e) {
@@ -97,5 +98,4 @@ void FirewallService::writePacketBlockerData(const std::string& data) {
 
     auto deserializedRule = FilterRule::deserialize(data);
     this->filterList->addRule(deserializedRule);
-    std::cout << "Rule added\n";
 }

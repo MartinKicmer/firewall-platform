@@ -22,6 +22,17 @@ public:
     std::tuple<std::string, std::string> getMACAddresses() const { return std::make_tuple(this->sourceMAC,this->destinationMAC); }
     uint16_t getEtherType() const { return etherType; }
     const std::vector<uint8_t>& getPayload() const { return this->payload; }
+
+
+    friend std::ostream& operator<<(std::ostream& o, const EthernetFrame& e) {
+        const auto& [source,dest] = e.getMACAddresses();
+        std::cout << "Ethernet frame\n----------\n";
+        std::cout << "SOURCE MAC: " << source << "\n";
+        std::cout << "DESTINATION MAC: " << dest << "\n";
+        std::cout << "ETHER TYPE: " << e.getEtherType() << std::endl;
+
+        return o;
+    }
 private:
     std::string destinationMAC;
     std::string sourceMAC;

@@ -21,6 +21,13 @@ public:
     : readData(data) {}
     std::shared_ptr<EthernetFrame> parseEthernetFrame();
     std::shared_ptr<IPv4Datagram>  parseIPv4Datagram();
+
+    void printL2Layer() {
+        std::cout << *this->parseEthernetFrame() << std::endl;
+    }
+    void printL3Layer() {
+        std::cout << *this->parseIPv4Datagram() <<  std::endl;
+    }
     
 private:
     std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& readData;
