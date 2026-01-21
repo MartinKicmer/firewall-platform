@@ -31,11 +31,7 @@ std::tuple<bool,std::string> MQConnector::recieveData() {
     }
     std::string dataStr(this->BUFFER);
     std::tuple<bool,std::string> data;
-    if(bytes == 0) {
-        data = std::make_tuple(true,dataStr); 
-    } else {
-        data = std::make_tuple(false,dataStr); 
-    }
+    data = std::make_tuple(false,dataStr); 
     return data;
 
 }

@@ -17,8 +17,8 @@ void FirewallService::run(const std::string& standardPath) {
         auto blockingRule = this->filterList->checkAllRules(data);
         
         if(blockingRule != nullptr) {
-            //std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
-            //this->filterList->printFilterRuleInfo(blockingRule);
+            std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
+            this->filterList->printFilterRuleInfo(blockingRule);
         } else {
             //std::cout << "Packet passed" << std::endl;
         }
@@ -84,11 +84,18 @@ void FirewallService::startPacketBlockerCommunication() {
                 std::cout << "Communication thread ended\n";
                 break;
             }
-            std::cout << data << std::endl;
+            this->writePacketBlockerData(data);
         }
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         std::cerr << "Ending communication thread\n";
         return;
     }
+}
+
+void FirewallService::writePacketBlockerData(const std::string& data) {
+
+    auto deserializedRule = FilterRule::deserialize(data);
+    this->filterList->addRule(deserializedRule);
+    std::cout << "Rule added\n";
 }

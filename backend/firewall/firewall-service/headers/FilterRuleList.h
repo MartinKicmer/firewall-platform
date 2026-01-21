@@ -6,7 +6,7 @@ class FilterRuleList {
 public:
     FilterRuleList(std::shared_ptr<PacketParser> packetParser = nullptr) 
     : packetParser(packetParser) {}
-    void addRule(int ID,std::shared_ptr<Rule> rule);
+    void addRule(std::shared_ptr<FilterRule> filterRule);
     void setParser(std::shared_ptr<PacketParser> packetParser) { this->packetParser = packetParser; }
     std::shared_ptr<FilterRule> checkAllRules(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data);
     void printFilterRuleInfo(std::shared_ptr<FilterRule> rule);

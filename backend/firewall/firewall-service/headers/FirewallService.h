@@ -43,9 +43,6 @@ public:
     FirewallService() : config(nullptr) {
         this->rawSocket.initSocket();
         this->filterList = std::make_shared<FilterRuleList>();
-        std::shared_ptr<L2Rule> l2rule = std::make_shared<L2Rule>(false,10,"none","ff:ff:ff:ff:ff:ff");
-        this->filterList->addRule(1,l2rule);
-
         this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
         
     }
@@ -57,7 +54,8 @@ public:
     void run(const std::string& standardPath);
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
-    void startPacketBlockerCommunication();    
+    void startPacketBlockerCommunication();
+    void writePacketBlockerData(const std::string& data);    
     std::unique_ptr<Config> config;
     std::thread packetBlockerT;
     RawSocket rawSocket;

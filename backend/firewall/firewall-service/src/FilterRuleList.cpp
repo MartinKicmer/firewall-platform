@@ -1,8 +1,8 @@
 #include "../headers/FilterRuleList.h"
 
-void FilterRuleList::addRule(int ID,std::shared_ptr<Rule> rule) {
-    std::shared_ptr<FilterRule> filterRule = std::make_shared<FilterRule>(rule,ID);
-    this->filterRules[ID] = filterRule;
+void FilterRuleList::addRule(std::shared_ptr<FilterRule> filterRule) {
+    this->filterRules[filterRule->getID()] = filterRule;
+    std::cout << "Rule added\n";
 }
 
 std::shared_ptr<FilterRule> FilterRuleList::checkAllRules(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data) {

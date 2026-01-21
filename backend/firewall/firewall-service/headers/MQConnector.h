@@ -17,6 +17,12 @@ public:
     void sendData(const std::string& data);
     void create();
     void connect();
+
+    void close() { 
+        if(this->mqDesc > 0) {
+            mq_close(this->mqDesc);
+        }
+    }
 private:
     struct mq_attr attr;
     mqd_t mqDesc;

@@ -6,17 +6,11 @@ int main(int argc, const char** argv) {
         CLIParser parser(argc,argv);
         auto filterRule = parser.parseCLIArguments();
         std::string seriliazedJSON = filterRule->serializeToJSON();
-        try {
-            {
-                 MQConnector connector("/firewallQueue");
-                 connector.connect();
-                 connector.sendData(seriliazedJSON);
-            }
-        } catch( const std::exception& e) {
-            std::cerr << e.what() << std::endl;
-            return -1;
-        }
+        MQConnector connector("/firewallQueue");
+        connector.connect();
+        connector.sendData(seriliazedJSON);
 
+        connector.close();
 
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
