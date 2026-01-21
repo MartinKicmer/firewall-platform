@@ -4,10 +4,14 @@
 #include <optional>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <cstring>
+#include <cstdlib>
 class MQConnector {
 public:
-    MQConnector(const std::string& path) 
-    : attr{0},mqDesc(-1),path(path),BUFFER{0} {}
+    MQConnector(const std::string& path_) 
+    : mqDesc(-1),path(path_),BUFFER{0} {
+        std::memset(&this->attr,0,sizeof(struct mq_attr));
+    }
 
     ~MQConnector() {
         mq_close(this->mqDesc);

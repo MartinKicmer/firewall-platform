@@ -10,7 +10,7 @@ std::string PacketParser::fromBytesToMacString(const unsigned char* bytes) {
 
 std::shared_ptr<EthernetFrame> PacketParser::parseEthernetFrame() {
     const auto& [bytesRead, data] = this->readData;
-    if (bytesRead < sizeof(struct ethhdr)) {
+    if (bytesRead < static_cast<long int>(sizeof(struct ethhdr))) {
         throw std::runtime_error("Invalid ethernet frame\n");
     }
     const struct ethhdr* ethernetHeader = reinterpret_cast<const struct ethhdr*>(data.data());

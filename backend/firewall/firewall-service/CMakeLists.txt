@@ -17,6 +17,7 @@ add_executable(firewallService
   src/FilterRule.cpp
   src/FilterRuleList.cpp
   src/MQConnector.cpp
+  headers/IPv4Datagram.h
   headers/FirewallService.h
   headers/RawSocket.h
   headers/EthernetFrame.h
@@ -26,5 +27,15 @@ add_executable(firewallService
   headers/Rules.h
   headers/MQConnector.h
 )
-
+target_compile_options(firewallService PRIVATE 
+        -Wall         
+        -Wextra         
+        -Wpedantic     
+        -Wshadow        
+        -Wnon-virtual-dtor 
+        -Wold-style-cast   
+        -Wunused        
+        -Woverloaded-virtual 
+        -Werror         
+    )
 target_link_libraries(firewallService PRIVATE nlohmann_json::nlohmann_json)

@@ -9,9 +9,9 @@
 
 class FilterRule {
 public:
-    FilterRule(std::shared_ptr<Rule> rule = nullptr,int ID = -1) 
-    : rule(rule),ID(ID) {}
-    bool canPass(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data);
+    FilterRule(std::shared_ptr<Rule> rule_ = nullptr,int ID_ = -1) 
+    : rule(rule_),ID(ID_) {}
+    bool canPass();
     void setParser(std::shared_ptr<PacketParser> parser) { this->packetParser = parser; }
     std::shared_ptr<Rule> getRule() { return this->rule; }
     [[nodiscard]] int getID() const { return this->ID; } 
@@ -34,7 +34,7 @@ public:
         return std::make_shared<FilterRule>(rule, id);
     }
 private:
-    int ID;
     std::shared_ptr<Rule> rule;
+    int ID;
     std::shared_ptr<PacketParser> packetParser;
 };

@@ -5,11 +5,11 @@ void FilterRuleList::addRule(std::shared_ptr<FilterRule> filterRule) {
     std::cout << "Rule added\n";
 }
 
-std::shared_ptr<FilterRule> FilterRuleList::checkAllRules(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data) {
+std::shared_ptr<FilterRule> FilterRuleList::checkAllRules() {
     for (auto& [ID,rule] : this->filterRules) {
         if(!this->packetParser) throw std::runtime_error("Filter list doesnt have parser\n");
         rule->setParser(this->packetParser);
-        if(!rule->canPass(data)) {
+        if(!rule->canPass()) {
             return rule;
         }
     }

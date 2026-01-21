@@ -1,7 +1,6 @@
 #include "../headers/FilterRule.h"
 
-bool FilterRule::canPass(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data) {
-    bool matched = false;
+bool FilterRule::canPass() {
     if(auto l2rule = std::dynamic_pointer_cast<L2Rule>(this->rule)) {
         auto frame = this->packetParser->parseEthernetFrame();
         const auto& [source,dest] = frame->getMACAddresses();
@@ -11,7 +10,7 @@ bool FilterRule::canPass(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data)
             return l2rule->permit; 
         }
     }
-
+    
     return true;
 }
 

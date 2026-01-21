@@ -28,7 +28,7 @@ void RawSocket::bindSocket(const std::string& interface) {
     addr.sll_ifindex = intNumber;
     addr.sll_protocol = htons(ETH_P_ALL);
 
-    int ret = bind(this->fd,(struct sockaddr*)&addr,sizeof(sockaddr_ll));
+    int ret = bind(this->fd,reinterpret_cast<struct sockaddr*>(&addr),sizeof(sockaddr_ll));
     if(ret == -1) {
         throw std::runtime_error("Could not bind socket to an interface\n");
     }

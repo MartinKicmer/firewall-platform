@@ -10,7 +10,7 @@ void MQConnector::create() {
     mode_t oldMask = umask(0);
     this->mqDesc = mq_open(currentPath, O_RDONLY | O_CREAT, 0777, &attr);
     umask(oldMask);
-    if(this->mqDesc == (mqd_t) -1) {
+    if(this->mqDesc == static_cast<mqd_t>(-1)) {
         throw std::runtime_error("Could not create message queuen\n");
     }
 }
@@ -18,7 +18,7 @@ void MQConnector::create() {
 void MQConnector::connect() {
     const char* currentPath = this->path.c_str();
     this->mqDesc = mq_open(currentPath,O_WRONLY);
-      if(this->mqDesc == (mqd_t) -1) {
+      if(this->mqDesc == static_cast<mqd_t>(-1)) {
         throw std::runtime_error("Could not connect to a message queuen\n");
     }
 }

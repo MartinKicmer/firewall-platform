@@ -4,11 +4,11 @@
 class FilterRuleList {
 
 public:
-    FilterRuleList(std::shared_ptr<PacketParser> packetParser = nullptr) 
-    : packetParser(packetParser) {}
+    FilterRuleList(std::shared_ptr<PacketParser> packetParser_ = nullptr) 
+    : packetParser(packetParser_) {}
     void addRule(std::shared_ptr<FilterRule> filterRule);
-    void setParser(std::shared_ptr<PacketParser> packetParser) { this->packetParser = packetParser; }
-    std::shared_ptr<FilterRule> checkAllRules(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data);
+    void setParser(std::shared_ptr<PacketParser> packetParser_) { this->packetParser = packetParser_; }
+    std::shared_ptr<FilterRule> checkAllRules();
     void printFilterRuleInfo(std::shared_ptr<FilterRule> rule);
 private:
     std::unordered_map<int,std::shared_ptr<FilterRule>> filterRules;

@@ -14,7 +14,7 @@ void FirewallService::run(const std::string& standardPath) {
         auto packetParser = std::make_shared<PacketParser>(data);
         this->filterList->setParser(packetParser);
         
-        auto blockingRule = this->filterList->checkAllRules(data);
+        auto blockingRule = this->filterList->checkAllRules();
         
         if(blockingRule != nullptr) {
             std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
@@ -40,7 +40,7 @@ std::unique_ptr<FirewallService::Config> FirewallService::loadFromConfig(const s
         std::string line;
         while(std::getline(ifile,line,'\n')) {
             for(int i = 0; i < 1; i++){
-                int firstPos = line.find(keywords[i]);
+                std::size_t firstPos = line.find(keywords[i]);
                 if(firstPos != std::string::npos) {
                     if(keywords[i] == "interface: " ) {
                         firstPos = firstPos + keywords[i].length();
