@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/martinkicmer/Desktop/firewall-platform/backend/server/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
