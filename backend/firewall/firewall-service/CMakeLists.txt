@@ -17,7 +17,10 @@ add_executable(firewallService
   src/FilterRule.cpp
   src/FilterRuleList.cpp
   src/MQConnector.cpp
+  src/RuleComparer.cpp
   headers/IPv4Datagram.h
+  headers/AbstractPDU.h
+  headers/RuleComparer.h
   headers/FirewallService.h
   headers/RawSocket.h
   headers/EthernetFrame.h

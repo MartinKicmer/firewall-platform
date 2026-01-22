@@ -6,7 +6,8 @@
 #include <vector>
 #include <string>
 #include <cstdint>
-class IPv4Datagram {
+#include "AbstractPDU.h"
+class IPv4Datagram : public AbstractPDU {
 public:
     IPv4Datagram(
         uint8_t  version_,
@@ -21,7 +22,7 @@ public:
         const uint8_t* payload_,
         std::size_t payloadLen_
     )
-        : version(version_)
+        : AbstractPDU(),version(version_)
         , header_length(header_length_)
         , service_type(service_type_)
         , total_length(static_cast<uint16_t>((header_length * 4) + payloadLen_)) 

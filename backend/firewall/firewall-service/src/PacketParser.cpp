@@ -11,7 +11,7 @@ std::string PacketParser::fromBytesToMacString(const unsigned char* bytes) {
 std::shared_ptr<EthernetFrame> PacketParser::parseEthernetFrame() {
     const auto& [bytesRead, data] = this->readData;
     if (bytesRead < static_cast<long int>(sizeof(struct ethhdr))) {
-        throw std::runtime_error("Invalid ethernet frame\n");
+        return nullptr;
     }
     const struct ethhdr* ethernetHeader = reinterpret_cast<const struct ethhdr*>(data.data());
     std::string destMAC = PacketParser::fromBytesToMacString(ethernetHeader->h_dest);
@@ -31,20 +31,21 @@ std::shared_ptr<IPv4Datagram> PacketParser::parseIPv4Datagram() {
     auto ethFrame = this->parseEthernetFrame();
     
     if(ethFrame->getEtherType() != 0x0800) {
-        throw std::runtime_error("Could not parse IPv4 because data is not in IPv4 format\n");
+        return nullptr;
     }
 
     auto payload = ethFrame->getPayload();
     std::size_t totalPayloadLen =  payload.size();
+    if(totalPayloadLen <= 0) return nullptr;
     const uint8_t* ipv4Data = &payload[0];
     if(totalPayloadLen < sizeof(struct iphdr)) {
-        throw std::runtime_error("Data too short for IPv4 header\n");
+        return nullptr;
     }
     const struct iphdr* ipHeader = reinterpret_cast<const struct iphdr*>(ipv4Data);
     std::size_t headerSize = ipHeader->ihl * 4;
     
     if (totalPayloadLen < headerSize) {
-        throw std::runtime_error("Data too short for IPv4 header with options\n");
+        return nullptr;
     }
     char srcIp[INET_ADDRSTRLEN];
     char destIp[INET_ADDRSTRLEN];

@@ -8,7 +8,7 @@ void FilterRuleList::addRule(std::shared_ptr<FilterRule> filterRule) {
 std::shared_ptr<FilterRule> FilterRuleList::checkAllRules() {
     for (auto& [ID,rule] : this->filterRules) {
         if(!this->packetParser) throw std::runtime_error("Filter list doesnt have parser\n");
-        rule->setParser(this->packetParser);
+        rule->setComparer(this->ruleComparer);
         if(!rule->canPass()) {
             return rule;
         }

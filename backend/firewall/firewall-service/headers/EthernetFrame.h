@@ -6,8 +6,8 @@
 #include <sstream>
 #include <net/ethernet.h> 
 #include <cstring>
-
-class EthernetFrame {
+#include "AbstractPDU.h"
+class EthernetFrame : public AbstractPDU {
 public:
     EthernetFrame(
         const std::string& destMAC_,
@@ -15,7 +15,7 @@ public:
         uint16_t etherType_,
         const uint8_t* payload_,
         std::size_t payloadLen_
-    ) : destinationMAC(destMAC_),sourceMAC(sourceMAC_),etherType(etherType_),payloadLen(payloadLen_) {
+    ) : AbstractPDU(),destinationMAC(destMAC_),sourceMAC(sourceMAC_),etherType(etherType_),payloadLen(payloadLen_) {
         this->payload.assign(payload_,payload_ + payloadLen_);
     }
     
