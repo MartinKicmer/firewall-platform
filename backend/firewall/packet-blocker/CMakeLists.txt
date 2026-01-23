@@ -13,9 +13,11 @@ add_executable(packet-blocker
   ../../firewall-service/src/FilterRule.cpp
   ../../firewall-service/src/PacketParser.cpp
   ../../firewall-service/src/MQConnector.cpp
+  ../../firewall-service/src/RuleComparer.cpp
   headers/CLIParser.h
   ../../firewall-service/headers/MQConnector.h
   ../../firewall-service/headers/FilterRule.h
-   ../../firewall-service/headers/PacketParser.h
+  ../../firewall-service/headers/PacketParser.h
+  ../../firewall-service/headers/RuleComparer.h
 )
 

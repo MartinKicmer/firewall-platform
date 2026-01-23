@@ -18,5 +18,6 @@ private:
     const int argc;
 
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();
+    [[nodiscard]] std::shared_ptr<L3Rule> parseL3Rule();
     [[nodiscard]] int parseRID();
 };

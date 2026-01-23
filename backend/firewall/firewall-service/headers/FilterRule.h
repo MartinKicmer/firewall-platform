@@ -18,25 +18,12 @@ public:
 
     [[nodiscard]] std::string serializeToJSON();
 
-    static std::shared_ptr<FilterRule> deserialize(const std::string& jsonData) {
-        auto j = nlohmann::json::parse(jsonData);
-        int id = j["ID"];
-        std::shared_ptr<Rule> rule;
-
-        if (j["ruleType"] == "L2") {
-            rule = std::make_shared<L2Rule>(
-                j["data"]["permit"],
-                j["data"]["limitCount"],
-                j["data"]["source"],
-                j["data"]["dest"]
-            );
-        }
-        return std::make_shared<FilterRule>(rule, id);
-    }
+    static std::shared_ptr<FilterRule> deserialize(const std::string& jsonData);
 private:
     std::shared_ptr<Rule> rule;
     int ID;
     std::shared_ptr<RuleComparer> ruleComparer;
 
     void formatL3ToJSON(nlohmann::json& j,std::shared_ptr<L3Rule> l3rule);
+    static std::shared_ptr<L3Rule> deserializeL3Rule(const nlohmann::json& j);
 };
