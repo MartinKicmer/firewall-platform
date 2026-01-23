@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <string>
 #include <stdexcept>   
 #include <cstring>     
@@ -22,14 +23,20 @@ public:
         ETHERNETFRAME = 0,
         IPV4DATAGRAM = 1
     };
-    PacketParser(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data ) 
-    : readData(data) {
-        this->pdus[PduType::ETHERNETFRAME] = this->parseEthernetFrame();
-        this->pdus[PduType::IPV4DATAGRAM]  = this->parseIPv4Datagram();
+    PacketParser(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data ) {
+        const auto& [payloadLen,payload] = data;
+        try {
+            auto frame = std::make_shared<EthernetFrame>(payload.data(),payloadLen);
+            frame->parse();
+            auto ipv4Datagram = frame->getNextLayer();
+            this->pdus[PduType::ETHERNETFRAME] = frame;
+            if(!ipv4Datagram) this->pdus[PduType::ETHERNETFRAME] = nullptr;
+            else this->pdus[PduType::IPV4DATAGRAM] = ipv4Datagram;
+
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
     }
-    std::shared_ptr<EthernetFrame> parseEthernetFrame();
-    std::shared_ptr<IPv4Datagram>  parseIPv4Datagram();
-    static std::string fromBytesToMacString(const unsigned char* mac);
 
     void printL2Layer() {
         auto pdu = this->pdus[PduType::ETHERNETFRAME];
@@ -58,6 +65,5 @@ public:
      }
     
 private:
-    std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& readData;
     std::unordered_map<int,std::shared_ptr<AbstractPDU>> pdus;
 };

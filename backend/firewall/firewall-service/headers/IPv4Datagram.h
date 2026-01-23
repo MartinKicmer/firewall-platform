@@ -7,34 +7,29 @@
 #include <string>
 #include <cstdint>
 #include "AbstractPDU.h"
+#include <netinet/ip.h>    
+#include <arpa/inet.h>     
 class IPv4Datagram : public AbstractPDU {
 public:
     IPv4Datagram(
-        uint8_t  version_,
-        uint8_t  header_length_,
-        uint8_t  service_type_,
-        uint16_t identification_,
-        uint8_t  ttl_,
-        uint8_t  protocol_,
-        uint16_t checksum_,
-        std::string source_ip_,
-        std::string dest_ip_,
         const uint8_t* payload_,
         std::size_t payloadLen_
     )
-        : AbstractPDU(),version(version_)
-        , header_length(header_length_)
-        , service_type(service_type_)
-        , total_length(static_cast<uint16_t>((header_length * 4) + payloadLen_)) 
-        , identification(identification_)
-        , ttl(ttl_)
-        , protocol(protocol_)
-        , checksum(checksum_)
-        , src(source_ip_)
-        , dest(dest_ip_)
-    {
-        this->payload.assign(payload_,payload_ + payloadLen_);
-    }
+        : AbstractPDU(payload_,payloadLen_)
+        , version(0)
+        , header_length(0)
+        , service_type(0)
+        , total_length(0) 
+        , identification(0)
+        , ttl(0)
+        , protocol(0)
+        , checksum(0)
+        , src("none")
+        , dest("none")
+    {}
+
+    void parse() override;
+    void parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) override;
 
     friend std::ostream& operator<<(std::ostream& o,const IPv4Datagram& d) {
 
@@ -77,5 +72,4 @@ private:
     uint16_t checksum;
     std::string src;
     std::string dest;
-    std::vector<uint8_t> payload; 
 };

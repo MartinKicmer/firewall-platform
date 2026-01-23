@@ -7,23 +7,23 @@
 #include <net/ethernet.h> 
 #include <cstring>
 #include "AbstractPDU.h"
+#include "IPv4Datagram.h"
+#include <arpa/inet.h>
 class EthernetFrame : public AbstractPDU {
 public:
     EthernetFrame(
-        const std::string& destMAC_,
-        const std::string& sourceMAC_,
-        uint16_t etherType_,
         const uint8_t* payload_,
         std::size_t payloadLen_
-    ) : AbstractPDU(),destinationMAC(destMAC_),sourceMAC(sourceMAC_),etherType(etherType_),payloadLen(payloadLen_) {
-        this->payload.assign(payload_,payload_ + payloadLen_);
-    }
-    
+    ) : AbstractPDU(payload_,payloadLen_),destinationMAC("none"),sourceMAC("none"),etherType(0) {}
+
     std::tuple<std::string, std::string> getMACAddresses() const { return std::make_tuple(this->sourceMAC,this->destinationMAC); }
     uint16_t getEtherType() const { return etherType; }
     const std::vector<uint8_t>& getPayload() const { return this->payload; }
 
+    void parse() override;
+    void parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) override;
 
+    static std::string fromBytesToMacString(const unsigned char* mac);
     friend std::ostream& operator<<(std::ostream& o, const EthernetFrame& e) {
         const auto& [source,dest] = e.getMACAddresses();
         std::cout << "Ethernet frame\n----------\n";
@@ -37,6 +37,4 @@ private:
     std::string destinationMAC;
     std::string sourceMAC;
     uint16_t etherType;
-    std::vector<uint8_t> payload;
-    std::size_t payloadLen;
 };
