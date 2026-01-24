@@ -14,7 +14,7 @@ void FirewallService::run(const std::string& standardPath) {
         auto packetParser = std::make_shared<PacketParser>(data);
         this->filterList->setParser(packetParser);
 
-        //packetParser->printL3Layer();
+        packetParser->printL3Layer();
         
         auto blockingRule = this->filterList->checkAllRules();
         if(blockingRule != nullptr) {

@@ -15,5 +15,5 @@ public:
 private:
     std::shared_ptr<PacketParser> parser;
 
-    bool matchIP(const std::string& targetIP, const std::tuple<std::string,int>& ipWithPrefix);
+    bool matchIP(const std::string& targetIP, const std::tuple<std::string,int>& ipWithPrefix) const;
 };

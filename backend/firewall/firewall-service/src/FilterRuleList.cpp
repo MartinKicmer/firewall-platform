@@ -21,5 +21,8 @@ void FilterRuleList::printFilterRuleInfo(std::shared_ptr<FilterRule> rule) {
         std::cout << "L2 Layer rule\n------------------\n";
         std::cout << "Source MAC: " << derived->source << "\n";
         std::cout << "Destination MAC: " << derived->dest << "\n";
+    }
+    if(auto l3rule = std::dynamic_pointer_cast<L3Rule>(rule->getRule())) {
+        std::cout << *l3rule << std::endl;
     } 
 }

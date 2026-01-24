@@ -1,8 +1,8 @@
 #include "../headers/RuleComparer.h"
 
-bool RuleComparer::matchIP(const std::string& targetIP, const std::tuple<std::string,int>& ipWithPrefix) {
+bool RuleComparer::matchIP(const std::string& targetIP, const std::tuple<std::string,int>& ipWithPrefix) const {
     const auto& [ruleIP, prefix] = ipWithPrefix;
-
+    if(ruleIP == "none") return true;
     uint32_t targetAddr, ruleAddr;
 
     inet_pton(AF_INET, targetIP.c_str(), &targetAddr);
@@ -18,6 +18,7 @@ bool RuleComparer::matchIP(const std::string& targetIP, const std::tuple<std::st
 bool RuleComparer::compare(std::shared_ptr<Rule> rule) const {
     if(auto l2rule = std::dynamic_pointer_cast<L2Rule>(rule)) {
         auto frame = this->parser->getEthernetFrame();
+        if(!frame) return true;
         const auto& [source,dest] = frame->getMACAddresses();
         bool sourceMatch = (l2rule->source == "none" || source == l2rule->source);
         bool destMatch   = (l2rule->dest == "none" || dest == l2rule->dest);
@@ -27,6 +28,14 @@ bool RuleComparer::compare(std::shared_ptr<Rule> rule) const {
     }
     if(auto l3rule = std::dynamic_pointer_cast<L3Rule>(rule)) {
         auto datagram = this->parser->getIPv4Datagram();
+        if(!datagram) return true;
+        bool sourceMatch = this->matchIP(datagram->getSource(), l3rule->source);
+        bool destMatch = this->matchIP(datagram->getDest(), l3rule->dest);
+
+        if(sourceMatch && destMatch) {
+            return l3rule->permit;
+        }
+
     }
     return true;
 }
