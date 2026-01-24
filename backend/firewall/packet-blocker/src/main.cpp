@@ -1,4 +1,4 @@
-#include "CLIParser.h"
+#include "../headers/CLIParser.h"
 #include "../../firewall-service/headers/MQConnector.h"
 
 int main(int argc, const char** argv) {

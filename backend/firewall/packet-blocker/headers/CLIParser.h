@@ -5,6 +5,7 @@
 #include <stdexcept>   
 #include <cstring>
 #include <iostream>
+#include <tuple>
 
 class CLIParser {
 public:
@@ -19,5 +20,7 @@ private:
 
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();
     [[nodiscard]] std::shared_ptr<L3Rule> parseL3Rule();
+    [[nodiscard]] bool parseAction();
     [[nodiscard]] int parseRID();
+    void parseIP(std::tuple<std::string,int>& address,const char* target);
 };

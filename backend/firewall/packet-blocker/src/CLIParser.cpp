@@ -1,4 +1,10 @@
 #include "../headers/CLIParser.h"
+#include <cstdlib>
+#include <cstring>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <tuple>
 
 int CLIParser::parseRID() {
     if(this->argc < 3) throw std::runtime_error("Invalid CLI number of args\n");
@@ -16,19 +22,15 @@ std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
 
     std::string smac = "none";
     std::string dmac = "none";
-    bool permit = false; 
-
     for (int i = 0; i < this->argc - 1; ++i) {
         if (std::strcmp(this->argv[i], "-smac") == 0) {
             smac = this->argv[i + 1];
         } else if (std::strcmp(this->argv[i], "-dmac") == 0) {
             dmac = this->argv[i + 1];
-        } else if (std::strcmp(this->argv[i], "-action") == 0) {
-            permit = (std::strcmp(this->argv[i+1], "permit") == 0);
-        }
+        } 
     }
 
-    
+    bool permit = this->parseAction();
     return std::make_shared<L2Rule>(permit, -1, smac, dmac);
 }
 
@@ -44,8 +46,67 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
                 filterRule = std::make_shared<FilterRule>(rule,RID);
                 return filterRule;
             }
+            if(!std::strcmp(current,"L3")) {
+                auto rule = this->parseL3Rule();
+                filterRule = std::make_shared<FilterRule>(rule,RID);
+                return filterRule;
+            }
         }
     }
 
     throw std::runtime_error("Could not find firewall rule in CLI args\n");
+}
+
+
+bool CLIParser::parseAction() {
+    bool permit = false; 
+
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if (std::strcmp(this->argv[i], "-action") == 0) {
+            permit = (std::strcmp(this->argv[i+1], "permit") == 0);
+        }
+    }
+
+    return permit;
+}
+
+
+void CLIParser::parseIP(std::tuple<std::string,int>& address,const char* target) {
+    std::stringstream ss(target);
+    std::string ip;
+    std::string prefix;
+
+    std::getline(ss,ip,'/');
+    std::getline(ss,prefix,'/');
+    int prefixNum = std::stoi(prefix);
+
+    address = std::make_tuple(ip,prefixNum);
+}
+
+std::shared_ptr<L3Rule> CLIParser::parseL3Rule() {
+    if (this->argc < 5) {
+        throw std::runtime_error("Invalid CLI format (too few arguments)\n");
+    }
+    bool permit = this->parseAction();
+    std::tuple<std::string,int> sourceA{"none",-1};
+    std::tuple<std::string,int> destA{"none",-1};
+    int ttlMax = -1;
+    int ttlMin = -1;
+
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"-sa")) {
+            this->parseIP(sourceA, this->argv[i+1]);
+        }
+        if(!std::strcmp(this->argv[i],"-da")) {
+            this->parseIP(sourceA, this->argv[i+1]);
+        }
+        if(!std::strcmp(this->argv[i],"-ttlMax")) {
+            ttlMax = std::atoi(this->argv[i+1]);
+        }
+        if(!std::strcmp(this->argv[i],"-ttlMin")) {
+            ttlMin = std::atoi(this->argv[i+1]);
+        }
+    }
+    return std::make_shared<L3Rule>(permit, -1, sourceA, destA,ttlMax,ttlMin);
+
 }
