@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 #include <string>
 #include <vector>
 #include <thread>
@@ -11,6 +12,7 @@
 #include "PacketParser.h"
 #include "FilterRuleList.h"
 #include "MQConnector.h"
+#include "PacketRedirector.h"
 #include <atomic>
 class FirewallService {
 public:
@@ -40,10 +42,11 @@ public:
             }
         }
     };
-    FirewallService() : config(nullptr) {
+    FirewallService() : config(nullptr),redirect(false) {
         this->rawSocket.initSocket();
         this->filterList = std::make_shared<FilterRuleList>();
         this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
+        this->packetRedirector = std::make_shared<PacketRedirector>();
         
     }
     ~FirewallService() {
@@ -55,10 +58,12 @@ public:
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
     void startPacketBlockerCommunication();
-    void writePacketBlockerData(const std::string& data);    
+    void writePacketBlockerData(const std::string& data);  
     std::unique_ptr<Config> config;
     std::thread packetBlockerT;
     RawSocket rawSocket;
+    bool redirect;
     std::shared_ptr<FilterRuleList> filterList;
+    std::shared_ptr<PacketRedirector> packetRedirector;
 
 };

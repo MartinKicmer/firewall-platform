@@ -20,6 +20,7 @@ add_executable(firewallService
   src/RuleComparer.cpp
   src/EthernetFrame.cpp
   src/IPv4Datagram.cpp
+  src/PacketRedirector.cpp
   headers/IPv4Datagram.h
   headers/AbstractPDU.h
   headers/RuleComparer.h
@@ -31,6 +32,7 @@ add_executable(firewallService
   headers/FilterRuleList.h
   headers/Rules.h
   headers/MQConnector.h
+  headers/PacketRedirector.h
 )
 target_compile_options(firewallService PRIVATE 
         -Wall         

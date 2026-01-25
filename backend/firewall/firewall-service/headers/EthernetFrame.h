@@ -9,6 +9,7 @@
 #include "AbstractPDU.h"
 #include "IPv4Datagram.h"
 #include <arpa/inet.h>
+#include <nlohmann/json.hpp>
 class EthernetFrame : public AbstractPDU {
 public:
     EthernetFrame(
@@ -32,6 +33,20 @@ public:
         std::cout << "ETHER TYPE: " << e.getEtherType() << std::endl;
 
         return o;
+    }
+
+    nlohmann::json serialize() const;
+
+    // 2. DESERIALIZACE z JSON (pro načítání pravidel)
+    static std::shared_ptr<EthernetFrame> deserialize(const nlohmann::json& j) {
+        // Vytvoříme prázdný frame (payload bude prázdný)
+        auto frame = std::make_shared<EthernetFrame>(nullptr, 0);
+        
+        if (j.contains("source_mac")) frame->sourceMAC = j["source_mac"];
+        if (j.contains("dest_mac")) frame->destinationMAC = j["dest_mac"];
+        if (j.contains("ether_type")) frame->etherType = j["ether_type"];
+        
+        return frame;
     }
 private:
     std::string destinationMAC;

@@ -1,4 +1,5 @@
 #include "../headers/FirewallService.h"
+#include <memory>
 
 
 
@@ -13,15 +14,23 @@ void FirewallService::run(const std::string& standardPath) {
         
         auto packetParser = std::make_shared<PacketParser>(data);
         this->filterList->setParser(packetParser);
-
         packetParser->printL3Layer();
-        
         auto blockingRule = this->filterList->checkAllRules();
         if(blockingRule != nullptr) {
             std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
             this->filterList->printFilterRuleInfo(blockingRule);
         } else {
-            //std::cout << "Packet passed" << std::endl;
+            std::cout << "Packet passed" << std::endl;
+        }
+
+        if(this->packetRedirector->canRedirect()) {
+            auto rule = this->packetRedirector->getRule();
+            if(rule->getRule()->permit && !blockingRule) {
+                this->packetRedirector->redirectPacket(packetParser);
+            }
+            if(!rule->getRule()->permit && blockingRule) {
+                this->packetRedirector->redirectPacket(packetParser);
+            }
         }
 }
     } catch( const std::exception& e) {
@@ -97,5 +106,8 @@ void FirewallService::startPacketBlockerCommunication() {
 void FirewallService::writePacketBlockerData(const std::string& data) {
     std::cout << "Adding rule: " << data << std::endl;
     auto deserializedRule = FilterRule::deserialize(data);
+    if(auto redirectRule = std::dynamic_pointer_cast<RedirectRule>(deserializedRule->getRule())) {
+        this->packetRedirector->setRule(deserializedRule);
+    }
     this->filterList->addRule(deserializedRule);
 }

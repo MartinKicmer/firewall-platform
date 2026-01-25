@@ -18,9 +18,15 @@ private:
     const char** argv;
     const int argc;
 
+    bool containsRedirect();
+
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();
     [[nodiscard]] std::shared_ptr<L3Rule> parseL3Rule();
+    [[nodiscard]] std::shared_ptr<RedirectRule> parseRedirectRule();
+
     [[nodiscard]] bool parseAction();
     [[nodiscard]] int parseRID();
+    [[nodiscard]] std::string parseLayer();
+
     void parseIP(std::tuple<std::string,int>& address,const char* target);
 };

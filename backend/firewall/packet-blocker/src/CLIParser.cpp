@@ -3,8 +3,19 @@
 #include <cstring>
 #include <memory>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
+
+
+bool CLIParser::containsRedirect() {
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"redirect")) {
+            return true;
+        }
+    }
+    return false;
+}
 
 int CLIParser::parseRID() {
     if(this->argc < 3) throw std::runtime_error("Invalid CLI number of args\n");
@@ -33,30 +44,48 @@ std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
     bool permit = this->parseAction();
     return std::make_shared<L2Rule>(permit, -1, smac, dmac);
 }
-
+std::shared_ptr<RedirectRule> CLIParser::parseRedirectRule() {
+    bool permit = this->parseAction();
+    int count = -1;
+    std::string layer = this->parseLayer();
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"redirect")) {
+            count = std::atoi(this->argv[i+1]);
+        }
+    }
+    return std::make_shared<RedirectRule>(permit,layer,count);
+}
 std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
+    if(this->containsRedirect()) {
+        auto rule = this->parseRedirectRule();        
+        return std::make_shared<FilterRule>(rule,-1);
+    }
     std::shared_ptr<FilterRule> filterRule;
     int RID = this->parseRID();
-    for(int i = 0; i < this->argc - 1; ++i) {
-        auto current = this->argv[i];
-        if(!std::strcmp(current,"-l")) {
-            current = this->argv[i+1];
-            if(!std::strcmp(current,"L2")) {
-                auto rule = this->parseL2Rule();
-                filterRule = std::make_shared<FilterRule>(rule,RID);
-                return filterRule;
-            }
-            if(!std::strcmp(current,"L3")) {
-                auto rule = this->parseL3Rule();
-                filterRule = std::make_shared<FilterRule>(rule,RID);
-                return filterRule;
-            }
-        }
+    std::string layer = this->parseLayer();
+    if(layer == "L2") {
+        auto rule = this->parseL2Rule();
+        filterRule = std::make_shared<FilterRule>(rule,RID);
+        return filterRule;
+    }
+    if(layer == "L3") {
+        auto rule = this->parseL3Rule();
+        filterRule = std::make_shared<FilterRule>(rule,RID);
+        return filterRule;
     }
 
     throw std::runtime_error("Could not find firewall rule in CLI args\n");
 }
 
+
+std::string CLIParser::parseLayer() {
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"-l")) {
+            return std::string(this->argv[i+1]);
+        }   
+    }
+    throw std::runtime_error("Layer wasnt found\n");
+}
 
 bool CLIParser::parseAction() {
     bool permit = false; 

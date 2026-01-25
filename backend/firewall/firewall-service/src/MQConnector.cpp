@@ -1,4 +1,5 @@
 #include "../headers/MQConnector.h"
+#include <cstring>
 
 void MQConnector::create() {
     this->attr.mq_flags = 0;
@@ -23,24 +24,22 @@ void MQConnector::connect() {
     }
 }
 
-std::tuple<bool,std::string> MQConnector::recieveData() {
-
-    ssize_t bytes = mq_receive(this->mqDesc,this->BUFFER,8192,0);
-    if(bytes < 0) {
-        throw std::runtime_error("Error while recieving from message queue\n");
+std::tuple<bool, std::string> MQConnector::recieveData() {
+    ssize_t bytes = mq_receive(this->mqDesc, this->BUFFER, 8192, nullptr);
+    if (bytes < 0) {
+        throw std::runtime_error("Error while receiving from message queue");
     }
-    std::string dataStr(this->BUFFER);
-    std::tuple<bool,std::string> data;
-    data = std::make_tuple(false,dataStr); 
-    return data;
-
+    std::string dataStr(this->BUFFER, static_cast<size_t>(bytes));
+    std::memset(this->BUFFER, 0, 8192);
+    bool isEnd = (dataStr == "end");
+    return std::make_tuple(isEnd, dataStr);
 }
 
 void MQConnector::sendData(const std::string& data) {
 
     int ret = mq_send(this->mqDesc,data.c_str(),data.length(),0);
     if(ret == -1) {
-        throw std:: runtime_error("Error while sending data to message queue\n");
+        throw std::runtime_error("Error while sending data to message queue\n");
     }
 
 }

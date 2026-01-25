@@ -12,6 +12,14 @@ bool FilterRule::canPass() {
 
 std::string FilterRule::serializeToJSON()  {
     nlohmann::json j;
+    if (auto lredirect = std::dynamic_pointer_cast<RedirectRule>(this->rule)) {
+        j["ruleType"] = lredirect->layer;
+        j["redirect"] = {
+            {"permit", lredirect->permit},
+            {"count", lredirect->count},           
+        };
+        return j.dump();
+    }
     j["ID"] = this->ID;
     if (auto l2 = std::dynamic_pointer_cast<L2Rule>(this->rule)) {
         j["ruleType"] = "L2";
@@ -41,21 +49,25 @@ void FilterRule::formatL3ToJSON(nlohmann::json& j,std::shared_ptr<L3Rule> l3rule
 }
 
 std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData) {
-     auto j = nlohmann::json::parse(jsonData);
-        int id = j["ID"];
-        std::shared_ptr<Rule> rule;
-        if (j["ruleType"] == "L2") {
-            rule = std::make_shared<L2Rule>(
-                j["data"]["permit"],
-                j["data"]["limitCount"],
-                j["data"]["source"],
-                j["data"]["dest"]
-            );
-        }
+    auto j = nlohmann::json::parse(jsonData);
+    std::shared_ptr<Rule> rule;
+     if(j.contains("redirect")) {
+        rule = std::make_shared<RedirectRule>(j["redirect"]["permit"],j["ruleType"],j["redirect"]["count"]);
+        return std::make_shared<FilterRule>(rule, -1);
+    }
+    int id = j["ID"];
+    if (j["ruleType"] == "L2") {
+        rule = std::make_shared<L2Rule>(
+            j["data"]["permit"],
+            j["data"]["limitCount"],
+            j["data"]["source"],
+            j["data"]["dest"]
+        );
+    }
 
-        if(j["ruleType"] == "L3") {
-            rule = deserializeL3Rule(j);
-        }
+    if(j["ruleType"] == "L3") {
+        rule = deserializeL3Rule(j);
+    }
     return std::make_shared<FilterRule>(rule, id);
 }
 

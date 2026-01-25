@@ -42,3 +42,12 @@ void EthernetFrame::parseNext(const uint8_t* nextPayload,std::size_t nextPayload
     }
 }
 
+
+nlohmann::json EthernetFrame::serialize() const {
+     return nlohmann::json{
+            {"type", "EthernetFrame"},
+            {"source_mac", sourceMAC},
+            {"dest_mac", destinationMAC},
+            {"ether_type", etherType}
+    };
+}
