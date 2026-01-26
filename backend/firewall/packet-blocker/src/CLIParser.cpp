@@ -44,6 +44,28 @@ std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
     bool permit = this->parseAction();
     return std::make_shared<L2Rule>(permit, -1, smac, dmac);
 }
+
+
+std::tuple<int,int,bool> CLIParser::parseIPINFO() {
+    int TOS = -1;
+    int protocol = -1;
+    bool allowFrags = true;
+
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"-proto")) {
+            protocol = std::atoi(this->argv[i+1]);
+        }
+        if(!std::strcmp(this->argv[i],"-allowFrag")) {
+            allowFrags = (std::strcmp(this->argv[i+1],"permit") == 0);
+        }
+        if(!std::strcmp(this->argv[i],"-tos")) {
+            TOS = std::atoi(this->argv[i+1]);
+        }
+    }
+
+    return std::make_tuple(protocol,TOS,allowFrags);
+}
+
 std::shared_ptr<RedirectRule> CLIParser::parseRedirectRule() {
     bool permit = this->parseAction();
     int count = -1;
@@ -122,6 +144,8 @@ std::shared_ptr<L3Rule> CLIParser::parseL3Rule() {
     int ttlMax = -1;
     int ttlMin = -1;
 
+    const auto [protocol,TOS,allowFrags] = this->parseIPINFO();
+
     for(int i = 0; i < this->argc - 1; ++i) {
         if(!std::strcmp(this->argv[i],"-sa")) {
             this->parseIP(sourceA, this->argv[i+1]);
@@ -136,6 +160,6 @@ std::shared_ptr<L3Rule> CLIParser::parseL3Rule() {
             ttlMin = std::atoi(this->argv[i+1]);
         }
     }
-    return std::make_shared<L3Rule>(permit, -1, sourceA, destA,ttlMax,ttlMin);
+    return std::make_shared<L3Rule>(permit, -1, sourceA, destA,ttlMax,ttlMin,protocol,TOS,allowFrags);
 
 }

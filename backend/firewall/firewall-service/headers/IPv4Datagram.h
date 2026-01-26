@@ -9,6 +9,7 @@
 #include "AbstractPDU.h"
 #include <netinet/ip.h>    
 #include <arpa/inet.h>     
+#include <nlohmann/json.hpp>
 class IPv4Datagram : public AbstractPDU {
 public:
     IPv4Datagram(
@@ -60,6 +61,9 @@ public:
     [[nodiscard]]  const  std::string& getSRC() const { return this->src; }
     [[nodiscard]]  const  std::string& getDST() const { return this->dest; }
     [[nodiscard]]  const   std::vector<uint8_t>& getPayload() const { return this->payload; }
+
+    nlohmann::json serialize() const;
+    static std::shared_ptr<IPv4Datagram> deserialize(const nlohmann::json& j);
 
 private:
     uint8_t version;        

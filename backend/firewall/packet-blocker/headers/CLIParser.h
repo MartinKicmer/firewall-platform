@@ -27,6 +27,7 @@ private:
     [[nodiscard]] bool parseAction();
     [[nodiscard]] int parseRID();
     [[nodiscard]] std::string parseLayer();
+    [[nodiscard]] std::tuple<int,int,bool> parseIPINFO();
 
     void parseIP(std::tuple<std::string,int>& address,const char* target);
 };

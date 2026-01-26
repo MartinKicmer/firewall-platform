@@ -38,7 +38,7 @@ int main(int argc, const char** argv) {
         connector.sendData(seriliazedJSON);
         connector.close();
 
-        th.join();
+        if(th.joinable()) th.join();
 
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";

@@ -44,7 +44,10 @@ void FilterRule::formatL3ToJSON(nlohmann::json& j,std::shared_ptr<L3Rule> l3rule
         {"source",l3rule->source},
         {"dest",l3rule->dest},
         {"minTTL",l3rule->ttlMin},
-        {"maxTTL",l3rule->ttlMax}
+        {"maxTTL",l3rule->ttlMax},
+        {"protocol",l3rule->protocol},
+        {"TOS",l3rule->tos},
+        {"allowFrag",l3rule->allowFragments}
     };
 }
 
@@ -78,7 +81,10 @@ std::shared_ptr<L3Rule> FilterRule::deserializeL3Rule(const nlohmann::json& j) {
         j["data"]["source"],
         j["data"]["dest"],
         j["data"]["maxTTL"],
-        j["data"]["minTTL"]
+        j["data"]["minTTL"],
+        j["data"]["protocol"],
+        j["data"]["TOS"],
+        j["data"]["allowFrag"]
     );
     return l3rule;
 }

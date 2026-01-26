@@ -33,13 +33,24 @@ struct L3Rule : public Rule {
     int ttlMax;
     int ttlMin;
 
+    int protocol;
+    int tos;
+    bool allowFragments;
+
     L3Rule(bool permit_,
         int limitCount_,
         const std::tuple<std::string,int>& source_,
         const std::tuple<std::string,int>& dest_,
         int ttlMax_, 
-        int ttlMin_) :
-    Rule(permit_,limitCount_),source(source_),dest(dest_),ttlMax(ttlMax_),ttlMin(ttlMin_) {}
+        int ttlMin_,
+        int protocol_ = -1,
+        int tos_ = -1,
+        bool allowFrags_ = true) :
+    Rule(permit_, limitCount_), 
+    source(source_), dest(dest_), 
+    ttlMax(ttlMax_), ttlMin(ttlMin_), 
+    protocol(protocol_), tos(tos_), 
+    allowFragments(allowFrags_) {}
 
     friend std::ostream& operator<<(std::ostream& o, const L3Rule& rule) {
         const auto& [source,sourcePrefix] = rule.source;
@@ -51,6 +62,9 @@ struct L3Rule : public Rule {
         std::cout << "LIMIT COUNT: " << rule.limitCount << "\n";
         std::cout << "TTL MAX: " << rule.ttlMax << "\n";
         std::cout << "TTL MIN: " << rule.ttlMin << "\n";
+        std::cout << "PROTOCOL: " << rule.protocol << "\n";
+        std::cout << "TOS: " << rule.tos << "\n";
+        std::cout << "allowFrags_: " << rule.allowFragments << "\n";
         return o;
     }
 

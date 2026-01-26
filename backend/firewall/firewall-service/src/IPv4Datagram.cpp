@@ -1,4 +1,5 @@
 #include "../headers/IPv4Datagram.h"
+#include <memory>
 
 void IPv4Datagram::parse() {
     auto ipPayload = this->payload;
@@ -33,4 +34,37 @@ void IPv4Datagram::parse() {
 
 void IPv4Datagram::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) {
     std::cout << nextPayload << nextPayloadSize;
+}
+
+nlohmann::json IPv4Datagram::serialize() const {
+    return nlohmann::json{
+            {"type", "IPv4Datagram"},
+            {"version", version},
+            {"header_len", header_length},
+            {"tos", service_type},
+            {"total_len", total_length},
+            {"id", identification},
+            {"ttl", ttl},
+            {"protocol", protocol},
+            {"checksum", checksum},
+            {"src", src},
+            {"dest", dest}
+        };
+}
+
+std::shared_ptr<IPv4Datagram> IPv4Datagram::deserialize(const nlohmann::json &j) {
+    auto datagram = std::make_shared<IPv4Datagram>(nullptr, 0);
+        
+    if (j.contains("version")) datagram->version = j["version"];
+    if (j.contains("header_len")) datagram->header_length = j["header_len"];
+    if (j.contains("tos")) datagram->service_type = j["tos"];
+    if (j.contains("total_len")) datagram->total_length = j["total_len"];
+    if (j.contains("id")) datagram->identification = j["id"];
+    if (j.contains("ttl")) datagram->ttl = j["ttl"];
+    if (j.contains("protocol")) datagram->protocol = j["protocol"];
+    if (j.contains("checksum")) datagram->checksum = j["checksum"];
+    if (j.contains("src")) datagram->src = j["src"];
+    if (j.contains("dest")) datagram->dest = j["dest"];
+    
+    return datagram;
 }
