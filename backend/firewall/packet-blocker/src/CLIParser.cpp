@@ -47,8 +47,8 @@ std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
 
 
 bool CLIParser::containsSave() {
-    for(int i = 0; i < this->argc - 1; ++i) {
-        if(!std::strcmp(this->argv[i],"save")) {
+    for(int i = 0; i < this->argc; ++i) {
+        if(!std::strcmp(this->argv[i],"-save")) {
             return true;
         }
     }

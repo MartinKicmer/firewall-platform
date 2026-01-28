@@ -6,6 +6,7 @@ void FirewallService::loadSavedRules() {
     auto logger = FilterRuleLogger::getInstance();
     auto rules = logger.selectAllRules();
     for(auto rule : rules) {
+        std::cout << rule->getRule() << std::endl;
         this->filterList->addRule(rule);
     }
 }
