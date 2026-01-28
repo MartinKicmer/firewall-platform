@@ -7,14 +7,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(nlohmann_json REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
-
+find_package(Boost REQUIRED COMPONENTS system)
 pkg_check_modules(PISTACHE REQUIRED IMPORTED_TARGET libpistache)
-
-add_executable(server src/main.cpp)
+include_directories(${Boost_INCLUDE_DIRS})
+add_executable(server src/main.cpp headers/ServerHandler.h)
 
 target_compile_options(server PRIVATE 
-    -Wall -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor 
-    -Wold-style-cast -Wunused -Woverloaded-virtual -Werror
+    -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor 
+    -Wold-style-cast -Woverloaded-virtual -Werror
 )
 
 target_include_directories(server PRIVATE 
@@ -27,4 +27,5 @@ target_link_libraries(server PRIVATE
     nlohmann_json::nlohmann_json
     Threads::Threads
     PkgConfig::PISTACHE
+    Boost::system
 )

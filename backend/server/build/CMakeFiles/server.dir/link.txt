@@ -1,1 +1,1 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/server.dir/link.d CMakeFiles/server.dir/src/main.cpp.o -o server  -Wl,-rpath,/usr/local/lib /usr/local/lib/libpistache.so
+/usr/bin/c++ CMakeFiles/server.dir/src/main.cpp.o -o server  -Wl,-rpath,/usr/local/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/libboost_system.so.1.83.0 /usr/local/lib/x86_64-linux-gnu/libpistache.so 

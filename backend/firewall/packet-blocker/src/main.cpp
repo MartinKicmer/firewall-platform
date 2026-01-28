@@ -17,12 +17,12 @@ int main(int argc, const char** argv) {
                 while(true) {
                     const auto& [isEnd, data] = reader.recieveData();
                     if(isEnd) {
-                        std::cout << "Redirect finished (end received)" << std::endl;
+                        //std::cout << "Redirect finished (end received)" << std::endl;
                         break; 
                     }
                     try {
                         auto json = nlohmann::json::parse(data);
-                        std::cout << "Received redirect: " << json.dump(4) << std::endl;
+                        std::cout << json.dump() << std::endl;
                     } catch (const std::exception& e) {
                         std::cerr << e.what() << std::endl;
                         break;
