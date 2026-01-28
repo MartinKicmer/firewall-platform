@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS l3_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    permit BOOLEAN NOT NULL,
+    limit_count INTEGER,
+    source_ip TEXT NOT NULL,
+    source_prefix INTEGER NOT NULL,
+    dest_ip TEXT NOT NULL,
+    dest_prefix INTEGER NOT NULL,
+    ttl_max INTEGER DEFAULT -1,
+    ttl_min INTEGER DEFAULT -1,
+    protocol INTEGER DEFAULT -1,
+    tos INTEGER DEFAULT -1,
+    allow_fragments BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS l2_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    permit BOOLEAN NOT NULL,
+    limit_count INTEGER DEFAULT -1,
+    source_mac TEXT DEFAULT 'none',
+    dest_mac TEXT DEFAULT 'none',
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

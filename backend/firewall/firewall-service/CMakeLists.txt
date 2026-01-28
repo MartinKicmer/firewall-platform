@@ -4,7 +4,7 @@ project(firewallService)
 set(CMAKE_CXX_STANDARD 23)
 
 find_package(nlohmann_json REQUIRED)
-
+find_package(SQLite3 REQUIRED)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/headers)
@@ -21,6 +21,7 @@ add_executable(firewallService
   src/EthernetFrame.cpp
   src/IPv4Datagram.cpp
   src/PacketRedirector.cpp
+  src/FilterRuleLogger.cpp
   headers/IPv4Datagram.h
   headers/AbstractPDU.h
   headers/RuleComparer.h
@@ -33,6 +34,7 @@ add_executable(firewallService
   headers/Rules.h
   headers/MQConnector.h
   headers/PacketRedirector.h
+  headers/FilterRuleLogger.h
 )
 target_compile_options(firewallService PRIVATE 
         -Wall         
@@ -45,4 +47,9 @@ target_compile_options(firewallService PRIVATE
         -Woverloaded-virtual 
         -Werror         
     )
-target_link_libraries(firewallService PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(firewallService PRIVATE 
+    nlohmann_json::nlohmann_json 
+    rt 
+    pthread 
+    SQLite::SQLite3
+)

@@ -2,11 +2,18 @@
 #include <memory>
 
 
+void FirewallService::loadSavedRules() {
+    auto rules = this->filterRuleLogger->selectAllRules();
+    for(auto rule : rules) {
+        this->filterList->addRule(rule);
+    }
+}
 
 void FirewallService::run(const std::string& standardPath) {
     try {
         this->config = this->loadFromConfig(standardPath);
         this->config->bindFirstActiveInterface(this->rawSocket);
+        this->loadSavedRules();
         std::cout << this->config << std::endl;
        while(1) {
         this->rawSocket.readFromSocket();
@@ -14,7 +21,7 @@ void FirewallService::run(const std::string& standardPath) {
         
         auto packetParser = std::make_shared<PacketParser>(data);
         this->filterList->setParser(packetParser);
-        //packetParser->printL3Layer();
+        packetParser->printL3Layer();
         auto blockingRule = this->filterList->checkAllRules();
         if(blockingRule != nullptr) {
             std::cout << "!!! PACKET BLOCKED !!!" << std::endl;

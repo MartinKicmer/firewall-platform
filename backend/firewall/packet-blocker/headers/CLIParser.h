@@ -6,17 +6,22 @@
 #include <cstring>
 #include <iostream>
 #include <tuple>
-
+#include <unordered_map>
 class CLIParser {
 public:
     CLIParser(int argc,const char** argv) 
-    : argv(argv),argc(argc) {}
-
+    : argv(argv),argc(argc) {
+        this->protocols["UDP"] = 17;
+        this->protocols["ICMP"] = 1;
+        this->protocols["TCP"] = 6;
+    }
     std::shared_ptr<FilterRule> parseCLIArguments();
 
 private:
     const char** argv;
     const int argc;
+    std::unordered_map<std::string,int> protocols;
+
 
     bool containsRedirect();
 

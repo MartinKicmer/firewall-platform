@@ -53,7 +53,7 @@ std::tuple<int,int,bool> CLIParser::parseIPINFO() {
 
     for(int i = 0; i < this->argc - 1; ++i) {
         if(!std::strcmp(this->argv[i],"-proto")) {
-            protocol = std::atoi(this->argv[i+1]);
+            protocol = this->protocols.at(this->argv[i+1]);
         }
         if(!std::strcmp(this->argv[i],"-allowFrag")) {
             allowFrags = (std::strcmp(this->argv[i+1],"permit") == 0);

@@ -14,6 +14,7 @@
 #include "MQConnector.h"
 #include "PacketRedirector.h"
 #include <atomic>
+#include "FilterRuleLogger.h"
 class FirewallService {
 public:
     struct Interface {
@@ -47,6 +48,7 @@ public:
         this->filterList = std::make_shared<FilterRuleList>();
         this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
         this->packetRedirector = std::make_shared<PacketRedirector>();
+        this->filterRuleLogger = std::make_shared<FilterRuleLogger>("../rules.db","../schema.sql");
         
     }
     ~FirewallService() {
@@ -55,6 +57,7 @@ public:
         }
     }
     void run(const std::string& standardPath);
+    void loadSavedRules();
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
     void startPacketBlockerCommunication();
@@ -65,5 +68,6 @@ private:
     bool redirect;
     std::shared_ptr<FilterRuleList> filterList;
     std::shared_ptr<PacketRedirector> packetRedirector;
+    std::shared_ptr<FilterRuleLogger> filterRuleLogger;
 
 };
