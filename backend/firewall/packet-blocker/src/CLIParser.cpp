@@ -46,6 +46,15 @@ std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
 }
 
 
+bool CLIParser::containsSave() {
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"save")) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::tuple<int,int,bool> CLIParser::parseIPINFO() {
     int TOS = -1;
     int protocol = -1;
@@ -85,14 +94,15 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
     std::shared_ptr<FilterRule> filterRule;
     int RID = this->parseRID();
     std::string layer = this->parseLayer();
+    bool save = this->containsSave();
     if(layer == "L2") {
         auto rule = this->parseL2Rule();
-        filterRule = std::make_shared<FilterRule>(rule,RID);
+        filterRule = std::make_shared<FilterRule>(rule,RID,save);
         return filterRule;
     }
     if(layer == "L3") {
         auto rule = this->parseL3Rule();
-        filterRule = std::make_shared<FilterRule>(rule,RID);
+        filterRule = std::make_shared<FilterRule>(rule,RID,save);
         return filterRule;
     }
 

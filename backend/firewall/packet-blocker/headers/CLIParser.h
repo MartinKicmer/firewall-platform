@@ -24,6 +24,7 @@ private:
 
 
     bool containsRedirect();
+    bool containsSave();
 
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();
     [[nodiscard]] std::shared_ptr<L3Rule> parseL3Rule();

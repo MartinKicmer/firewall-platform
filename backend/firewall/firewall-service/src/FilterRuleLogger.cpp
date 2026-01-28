@@ -6,6 +6,12 @@
 #include <stdexcept>
 #include <tuple>
 
+FilterRuleLogger& FilterRuleLogger::getInstance() {
+    static FilterRuleLogger logger("../rules.db","../schema.sql");
+
+    return logger;
+}
+
 void FilterRuleLogger::openDB(const std::string& dbName) {
     if(!sqlite3_open(dbName.c_str(), &this->db)) {
          this->setupTables();

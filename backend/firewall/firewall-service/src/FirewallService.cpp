@@ -3,7 +3,8 @@
 
 
 void FirewallService::loadSavedRules() {
-    auto rules = this->filterRuleLogger->selectAllRules();
+    auto logger = FilterRuleLogger::getInstance();
+    auto rules = logger.selectAllRules();
     for(auto rule : rules) {
         this->filterList->addRule(rule);
     }
@@ -113,6 +114,10 @@ void FirewallService::startPacketBlockerCommunication() {
 void FirewallService::writePacketBlockerData(const std::string& data) {
     std::cout << "Adding rule: " << data << std::endl;
     auto deserializedRule = FilterRule::deserialize(data);
+    if(deserializedRule->canSave()) {
+        auto logger = FilterRuleLogger::getInstance();
+        logger.log(deserializedRule);
+    }
     if(auto redirectRule = std::dynamic_pointer_cast<RedirectRule>(deserializedRule->getRule())) {
         this->packetRedirector->setRule(deserializedRule);
     }

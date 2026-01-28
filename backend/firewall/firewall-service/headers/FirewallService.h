@@ -48,8 +48,6 @@ public:
         this->filterList = std::make_shared<FilterRuleList>();
         this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
         this->packetRedirector = std::make_shared<PacketRedirector>();
-        this->filterRuleLogger = std::make_shared<FilterRuleLogger>("../rules.db","../schema.sql");
-        
     }
     ~FirewallService() {
         if(this->packetBlockerT.joinable()) {
@@ -68,6 +66,4 @@ private:
     bool redirect;
     std::shared_ptr<FilterRuleList> filterList;
     std::shared_ptr<PacketRedirector> packetRedirector;
-    std::shared_ptr<FilterRuleLogger> filterRuleLogger;
-
 };

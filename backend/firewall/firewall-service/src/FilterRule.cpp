@@ -21,6 +21,7 @@ std::string FilterRule::serializeToJSON()  {
         return j.dump();
     }
     j["ID"] = this->ID;
+    j["save"] = this->save;
     if (auto l2 = std::dynamic_pointer_cast<L2Rule>(this->rule)) {
         j["ruleType"] = "L2";
         j["data"] = {
@@ -59,6 +60,10 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
         return std::make_shared<FilterRule>(rule, -1);
     }
     int id = j["ID"];
+    bool save = false;
+    if(j.contains("save")) {
+        save = j["save"];
+    }
     if (j["ruleType"] == "L2") {
         rule = std::make_shared<L2Rule>(
             j["data"]["permit"],
@@ -71,7 +76,7 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
     if(j["ruleType"] == "L3") {
         rule = deserializeL3Rule(j);
     }
-    return std::make_shared<FilterRule>(rule, id);
+    return std::make_shared<FilterRule>(rule, id,save);
 }
 
 std::shared_ptr<L3Rule> FilterRule::deserializeL3Rule(const nlohmann::json& j) {

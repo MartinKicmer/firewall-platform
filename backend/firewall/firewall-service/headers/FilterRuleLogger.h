@@ -8,12 +8,13 @@
 #include "FilterRule.h"
 class FilterRuleLogger {
 public:
-    FilterRuleLogger(const std::string& dbName,const std::string& schema_) : schema(schema_ ) {
-        this->openDB(dbName);
-    }
+    static FilterRuleLogger& getInstance();
     void log(std::shared_ptr<FilterRule> rule);
     std::vector<std::shared_ptr<FilterRule>> selectAllRules();
 private:
+    FilterRuleLogger(const std::string& dbName,const std::string& schema_) : schema(schema_ ) {
+        this->openDB(dbName);
+    }
     void openDB(const std::string& dbName);
     void insertL2Rule(std::shared_ptr<FilterRule> l2rule);
     void insertL3Rule(std::shared_ptr<FilterRule> l2rule);
