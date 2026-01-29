@@ -38,14 +38,12 @@ add_executable(firewallService
   headers/FilterRuleLogger.h
   headers/UdpDatagram.h
 )
-target_compile_options(firewallService PRIVATE 
-        -Wall         
+target_compile_options(firewallService PRIVATE      
         -Wextra         
         -Wpedantic     
         -Wshadow        
         -Wnon-virtual-dtor 
-        -Wold-style-cast   
-        -Wunused        
+        -Wold-style-cast         
         -Woverloaded-virtual 
         -Werror         
     )

@@ -17,10 +17,10 @@ void UdpDatagram::parse() {
     uint16_t len_  = udp->len;
     uint16_t checkSum = udp->check;
 
-    this->sPort = sourcePort;
-    this->dPort = destPort;
-    this->len = len_;
-    this->checksum = checkSum;
+    this->sPort = ntohs(udp->source);
+    this->dPort = ntohs(udp->dest);
+    this->len = ntohs(udp->len);
+    this->checksum = ntohs(udp->check);
 
     const uint8_t* nextPayloadStart = data + sizeof(struct udphdr);
     std::size_t nextPayloadSize = this->payloadLen - sizeof(struct udphdr);
@@ -29,5 +29,5 @@ void UdpDatagram::parse() {
 }
 
 void UdpDatagram::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) {
-    std::cout << nextPayload << nextPayloadSize;
+    //std::cout << nextPayload << nextPayloadSize;
 }

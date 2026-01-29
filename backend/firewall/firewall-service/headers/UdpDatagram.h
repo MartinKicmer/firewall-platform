@@ -4,6 +4,8 @@
 #include <vector>
 #include <netinet/udp.h>
 #include <iostream>
+#include <netinet/ip.h>    
+#include <arpa/inet.h>  
 class UdpDatagram : public AbstractPDU {
 public:
     UdpDatagram(
