@@ -7,6 +7,28 @@
 #include <string>
 #include <tuple>
 
+bool CLIParser::containsSelect() {
+    for(int i = 0; i < this->argc; ++i) {
+        if(!std::strcmp(this->argv[i],"select")) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+std::shared_ptr<SelectRule> CLIParser::parseSelectRule() {
+    std::string layer = this->parseLayer();
+    int ID = this->parseRID();
+    bool permit = this->parseAction();
+    bool fromMemory = false;
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"-memory")) {
+            fromMemory = (!std::strcmp(this->argv[i+1],"true"));
+        }
+    }
+    return std::make_shared<SelectRule>(permit,ID,layer,fromMemory);
+}
 
 bool CLIParser::containsRedirect() {
     for(int i = 0; i < this->argc - 1; ++i) {
@@ -24,7 +46,7 @@ int CLIParser::parseRID() {
             return std::stoi(this->argv[i + 1]);
         }
     }
-    throw std::runtime_error("Could not find RID argument (-rid)\n");
+    return -1;
 }
 std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
     if (this->argc < 5) {
@@ -91,8 +113,15 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
         auto rule = this->parseRedirectRule();        
         return std::make_shared<FilterRule>(rule,-1);
     }
+    if(this->containsSelect()) {
+        auto rule = this->parseSelectRule();
+        return std::make_shared<FilterRule>(rule,this->parseRID());
+    }
     std::shared_ptr<FilterRule> filterRule;
     int RID = this->parseRID();
+    if(RID == -1) {
+        throw std::runtime_error("Could not find RID\n");
+    }
     std::string layer = this->parseLayer();
     bool save = this->containsSave();
     if(layer == "L2") {

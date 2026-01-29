@@ -21,6 +21,15 @@ std::string FilterRule::serializeToJSON()  {
         return j.dump();
     }
     j["ID"] = this->ID;
+    if(auto selectRule = std::dynamic_pointer_cast<SelectRule>(this->rule)) {
+        j["select"] = {
+            {"permit",selectRule->permit},
+            {"layer",selectRule->layer},
+            {"fromMemory",selectRule->fromMemory}
+        };
+        return j.dump();
+    }
+
     j["save"] = this->save;
     if (auto l2 = std::dynamic_pointer_cast<L2Rule>(this->rule)) {
         j["ruleType"] = "L2";
@@ -55,11 +64,20 @@ void FilterRule::formatL3ToJSON(nlohmann::json& j,std::shared_ptr<L3Rule> l3rule
 std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData) {
     auto j = nlohmann::json::parse(jsonData);
     std::shared_ptr<Rule> rule;
-     if(j.contains("redirect")) {
+    if(j.contains("redirect")) {
         rule = std::make_shared<RedirectRule>(j["redirect"]["permit"],j["ruleType"],j["redirect"]["count"]);
         return std::make_shared<FilterRule>(rule, -1);
     }
     int id = j["ID"];
+
+    if(j.contains("select")) {
+        bool permit = j["select"]["permit"];
+        std::string layer(j["select"]["layer"]);
+        bool fromMemory = j["select"]["fromMemory"];
+        rule = std::make_shared<SelectRule>(permit,id,layer,fromMemory);
+        return std::make_shared<FilterRule>(rule, id);
+    }
+
     bool save = false;
     if(j.contains("save")) {
         save = j["save"];

@@ -25,7 +25,9 @@ private:
 
     bool containsRedirect();
     bool containsSave();
+    bool containsSelect();
 
+    std::shared_ptr<SelectRule> parseSelectRule();
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();
     [[nodiscard]] std::shared_ptr<L3Rule> parseL3Rule();
     [[nodiscard]] std::shared_ptr<RedirectRule> parseRedirectRule();

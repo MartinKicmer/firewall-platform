@@ -11,6 +11,7 @@ include_directories(${CMAKE_SOURCE_DIR}/headers)
 add_executable(packet-blocker
   src/main.cpp
   src/CLIParser.cpp
+  src/FirewallGateway.cpp
   ../../firewall-service/src/FilterRule.cpp
   ../../firewall-service/src/PacketParser.cpp
   ../../firewall-service/src/MQConnector.cpp
@@ -18,7 +19,9 @@ add_executable(packet-blocker
   ../../firewall-service/src/PacketRedirector.cpp
   ../../firewall-service/src/EthernetFrame.cpp
   ../../firewall-service/src/IPv4Datagram.cpp
+  ../../firewall-service/src/UdpDatagram.cpp
   headers/CLIParser.h
+  headers/FirewallGateway.h
   ../../firewall-service/headers/MQConnector.h
   ../../firewall-service/headers/FilterRule.h
   ../../firewall-service/headers/PacketParser.h
@@ -26,6 +29,7 @@ add_executable(packet-blocker
   ../../firewall-service/headers/PacketRedirector.h
   ../../firewall-service/headers/EthernetFrame.h
   ../../firewall-service/headers/IPv4Datagram.h
+  ../../firewall-service/headers/UdpDatagram.h
   
 )
 

@@ -70,6 +70,16 @@ struct L3Rule : public Rule {
 
 };
 
+struct SelectRule : public Rule {
+    SelectRule(bool permit_,int ID_,const std::string& layer_,bool fromMemory_) 
+    : Rule(permit_,-1),ID(ID_),layer(layer_ ),fromMemory(fromMemory_) {}
+
+    int ID;
+    std::string layer;
+    bool fromMemory;
+};
+
+
 struct RedirectRule : public Rule {
     RedirectRule(bool permit_,const std::string& layer_,int count_) 
     : Rule(permit_,-1),layer(layer_),count(count_) {}
