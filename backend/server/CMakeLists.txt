@@ -10,7 +10,14 @@ find_package(PkgConfig REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 pkg_check_modules(PISTACHE REQUIRED IMPORTED_TARGET libpistache)
 include_directories(${Boost_INCLUDE_DIRS})
-add_executable(server src/main.cpp headers/ServerHandler.h)
+add_executable(server 
+    src/main.cpp 
+    src/ServerHandler.cpp 
+    src/PacketBlockerGateway.cpp 
+    headers/ServerHandler.h
+    headers/PacketBlockerGateway.h 
+    
+    )
 
 target_compile_options(server PRIVATE 
     -Wextra -Wpedantic -Wshadow -Wnon-virtual-dtor 

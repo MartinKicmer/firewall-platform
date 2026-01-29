@@ -1,59 +1,23 @@
-#include <boost/process/detail/child_decl.hpp>
-#include <boost/process/io.hpp>
-#include <boost/process/pipe.hpp>
+#pragma once
 #include <cstdlib>
+#include <memory>
 #include <pistache/http.h>
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
-#include <boost/process.hpp>
-#include <nlohmann/json.hpp>
+#include "PacketBlockerGateway.h"
 class ServerHandler : public Pistache::Http::Handler {
 public:
 
-    HTTP_PROTOTYPE(ServerHandler)
-
+    std::shared_ptr<Pistache::Tcp::Handler> clone() const override {
+        return std::make_shared<ServerHandler>();
+    }
     ServerHandler() {
         this->setupRestRoutes();
+        this->packetBlockerGateway = std::make_unique<PacketBlockerGateway>("../../firewall/packet-blocker/build/packet-blocker");
     }
-    void onRequest(const Pistache::Http::Request& request, Pistache::Http::ResponseWriter response) override {
-        response.send(Pistache::Http::Code::Ok, "Hello, World\n");
-    }
-
-    void setupRestRoutes() {
-        Pistache::Rest::Routes::Get(this->router, "/value/:count",Pistache::Rest::Routes::bind(&ServerHandler::getLastPDUs, this));
-        std::cout << "All routes setup\n";
-    }
-
-    void getLastPDUs(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
-        std::string noPDUs = request.param(":count").as<std::string>();
-        boost::process::ipstream outStream;
-        //-l L3 -action deny redirect 10
-        nlohmann::json jsonArr = nlohmann::json::array();
-        try {
-            boost::process::child pr("../../firewall/packet-blocker/build/packet-blocker",
-                "-l","L3","-action","deny","redirect",noPDUs.c_str(),boost::process::std_out > outStream);
-
-            std::string line;
-            while (std::getline(outStream, line) && !line.empty()) {
-                if(line.empty()) continue;
-                try {
-                    jsonArr.push_back(nlohmann::json::parse(line));
-                } catch(...) {
-                    continue;
-                }
-            }
-
-            pr.wait();
-
-            response.headers().add<Pistache::Http::Header::ContentType>(MIME(Application, Json));
-            response.send(Pistache::Http::Code::Ok, jsonArr.dump());
-            
-        } catch (const std::exception& e) {
-            std::cerr << "Eror while trying to capture last PDUS: " << e.what() << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-    }
+    void onRequest(const Pistache::Http::Request& request, Pistache::Http::ResponseWriter response) override;
+    void setupRestRoutes();
+    void getLastPDUs(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response);
 
     std::shared_ptr<Pistache::Rest::Router> getRouter() {
         return std::make_shared<Pistache::Rest::Router>(router);
@@ -61,4 +25,5 @@ public:
 
 private:
     Pistache::Rest::Router router;
+    std::unique_ptr<PacketBlockerGateway> packetBlockerGateway;
 };

@@ -129,6 +129,54 @@ server/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
 .PHONY : server/fast
 
+src/PacketBlockerGateway.o: src/PacketBlockerGateway.cpp.o
+.PHONY : src/PacketBlockerGateway.o
+
+# target to build an object file
+src/PacketBlockerGateway.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o
+.PHONY : src/PacketBlockerGateway.cpp.o
+
+src/PacketBlockerGateway.i: src/PacketBlockerGateway.cpp.i
+.PHONY : src/PacketBlockerGateway.i
+
+# target to preprocess a source file
+src/PacketBlockerGateway.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.i
+.PHONY : src/PacketBlockerGateway.cpp.i
+
+src/PacketBlockerGateway.s: src/PacketBlockerGateway.cpp.s
+.PHONY : src/PacketBlockerGateway.s
+
+# target to generate assembly for a file
+src/PacketBlockerGateway.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.s
+.PHONY : src/PacketBlockerGateway.cpp.s
+
+src/ServerHandler.o: src/ServerHandler.cpp.o
+.PHONY : src/ServerHandler.o
+
+# target to build an object file
+src/ServerHandler.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ServerHandler.cpp.o
+.PHONY : src/ServerHandler.cpp.o
+
+src/ServerHandler.i: src/ServerHandler.cpp.i
+.PHONY : src/ServerHandler.i
+
+# target to preprocess a source file
+src/ServerHandler.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ServerHandler.cpp.i
+.PHONY : src/ServerHandler.cpp.i
+
+src/ServerHandler.s: src/ServerHandler.cpp.s
+.PHONY : src/ServerHandler.s
+
+# target to generate assembly for a file
+src/ServerHandler.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ServerHandler.cpp.s
+.PHONY : src/ServerHandler.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -162,6 +210,12 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... server"
+	@echo "... src/PacketBlockerGateway.o"
+	@echo "... src/PacketBlockerGateway.i"
+	@echo "... src/PacketBlockerGateway.s"
+	@echo "... src/ServerHandler.o"
+	@echo "... src/ServerHandler.i"
+	@echo "... src/ServerHandler.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

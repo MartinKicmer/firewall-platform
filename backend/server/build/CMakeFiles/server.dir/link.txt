@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/server.dir/src/main.cpp.o -o server  -Wl,-rpath,/usr/local/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/libboost_system.so.1.83.0 /usr/local/lib/x86_64-linux-gnu/libpistache.so 
+/usr/bin/c++ CMakeFiles/server.dir/src/main.cpp.o CMakeFiles/server.dir/src/ServerHandler.cpp.o CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o -o server  -Wl,-rpath,/usr/local/lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu/libboost_system.so.1.83.0 /usr/local/lib/x86_64-linux-gnu/libpistache.so 

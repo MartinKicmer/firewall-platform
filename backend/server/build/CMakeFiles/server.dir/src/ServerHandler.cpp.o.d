@@ -1,5 +1,5 @@
-CMakeFiles/server.dir/src/main.cpp.o: \
- /home/andrew/firewall-platform/backend/server/src/main.cpp \
+CMakeFiles/server.dir/src/ServerHandler.cpp.o: \
+ /home/andrew/firewall-platform/backend/server/src/ServerHandler.cpp \
  /usr/include/stdc-predef.h \
  /home/andrew/firewall-platform/backend/server/src/../headers/ServerHandler.h \
  /usr/include/c++/13/cstdlib \
