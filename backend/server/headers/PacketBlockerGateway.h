@@ -10,6 +10,7 @@ public:
     PacketBlockerGateway(const std::string& processPath_) 
     : processPath(processPath_) {}
     nlohmann::json getLastPDUS(int count,const std::string& layer,bool permit);
+    void createL2Rule(int ID,bool permit,const std::string& sourceMAC,const std::string& destMAC);
 
 private:
     std::string processPath;

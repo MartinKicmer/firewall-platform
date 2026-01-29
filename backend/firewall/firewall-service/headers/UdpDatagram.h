@@ -1,6 +1,7 @@
 #pragma  once
 #include "AbstractPDU.h"
 #include <cstdint>
+#include <ostream>
 #include <vector>
 #include <netinet/udp.h>
 #include <iostream>
@@ -18,6 +19,16 @@ public:
     uint16_t getDestPort() const { return this->dPort; }
     uint16_t getLen() const { return this->len; }
     uint16_t getChecksum() const { return this->checksum; }
+
+
+    friend std::ostream& operator<<(std::ostream& o, const UdpDatagram& u ) {
+        std::cout << "UDP DATAGRAM\n--------------\n";
+        std::cout << "SOURCE PORT: " << u.getSourcePort() << std::endl;
+        std::cout << "DEST PORT: " << u.getDestPort() << std::endl;
+        std::cout << "LENGTH: " << u.getLen() << std::endl;
+        std::cout << "CHECKSUM: " << u.getChecksum() << std::endl;
+        return o;
+    }
 private:
     uint16_t sPort;
     uint16_t dPort;

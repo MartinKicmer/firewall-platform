@@ -1,8 +1,8 @@
 #include "../headers/PacketParser.h"
 #include <memory>
 
-void PacketParser::printL2Layer() {
-    auto pdu = this->pdus[PduType::ETHERNETFRAME];
+void PacketParser::printL2Layer(PacketParser::PduType type) {
+    auto pdu = this->pdus[type];
     if(pdu) {
         auto frame = std::dynamic_pointer_cast<EthernetFrame>(pdu);
         if(frame) {
@@ -11,15 +11,24 @@ void PacketParser::printL2Layer() {
     }
 }
 
-void PacketParser::printL3Layer() {
-    auto pdu = this->pdus[PduType::IPV4DATAGRAM];
+void PacketParser::printL3Layer(PacketParser::PduType type) {
+    auto pdu = this->pdus[type];
     if(pdu) {
-        auto ipv4datagram = std::dynamic_pointer_cast<IPv4Datagram>(pdu);
-        if(ipv4datagram) {
-            std::cout << *ipv4datagram << std::endl;
+        if(auto ipv4Datagram = std::dynamic_pointer_cast<IPv4Datagram>(pdu)) {
+             std::cout << *ipv4Datagram << std::endl;
         }
     }
 }
+
+void PacketParser::printL4Layer(PacketParser::PduType type) {
+    auto pdu = this->pdus[type];
+    if(pdu) {
+        if(auto udpDatagram = std::dynamic_pointer_cast<UdpDatagram>(pdu)) {
+             std::cout << *udpDatagram << std::endl;
+        }
+    }
+}
+
 
 void PacketParser::initPDUS() {
     const auto& [payloadLen, payload] = this->data;

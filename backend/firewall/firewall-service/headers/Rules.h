@@ -70,7 +70,6 @@ struct L3Rule : public Rule {
 
 };
 
-
 struct RedirectRule : public Rule {
     RedirectRule(bool permit_,const std::string& layer_,int count_) 
     : Rule(permit_,-1),layer(layer_),count(count_) {}

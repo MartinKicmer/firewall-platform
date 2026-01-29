@@ -9,13 +9,40 @@ void ServerHandler::onRequest(const Pistache::Http::Request& request, Pistache::
 
 void ServerHandler::setupRestRoutes() {
     Pistache::Rest::Routes::Get(this->router, "/fireWall/redirect/:action",Pistache::Rest::Routes::bind(&ServerHandler::getLastPDUs, this));
+    Pistache::Rest::Routes::Post(this->router, "/fireWall/createRule/:action",Pistache::Rest::Routes::bind(&ServerHandler::createRule, this));
     std::cout << "All routes setup\n";
+}
+
+
+void ServerHandler::createRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
+    std::string permitStr = request.param(":action").as<std::string>();
+    bool permit = (permitStr == "1" || permitStr == "true");
+    std::string body = request.body();
+    if(body.empty()) {
+        response.send(Pistache::Http::Code::Bad_Request,"Missing arguments for creating a rule\n");
+        return;
+    }
+    auto j = nlohmann::json::parse(body);
+    if(!j.contains("layer")) {
+        response.send(Pistache::Http::Code::Bad_Request,"Missing argument layer\n");
+        return;
+    }
+    if(!j.contains("ID")) {
+        response.send(Pistache::Http::Code::Bad_Request,"Missing argument ID\n");
+        return;
+    }
+    std::string layer = j["layer"];
+    int ID = j["ID"];
+    std::string sourceMAC = j["sourceMAC"];
+    std::string destMAC = j["destMAC"];
+    this->packetBlockerGateway->createL2Rule(ID, permit, sourceMAC, destMAC);
+    response.send(Pistache::Http::Code::Ok);
 }
 
 void ServerHandler::getLastPDUs(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
     bool permit = request.param(":action").as<bool>();
     auto query = request.query();
-    if(!query.has("count") || !query.has("layer")) response.send(Pistache::Http::Code::No_Content);
+    if(!query.has("count") || !query.has("layer")) response.send(Pistache::Http::Code::Bad_Request);
 
     int count = std::stoi(query.get("count").value());
     std::string layer = query.get("layer").value();

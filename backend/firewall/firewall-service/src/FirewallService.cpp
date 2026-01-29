@@ -23,7 +23,7 @@ void FirewallService::run(const std::string& standardPath) {
         
         auto packetParser = std::make_shared<PacketParser>(data);
         this->filterList->setParser(packetParser);
-        packetParser->printL3Layer();
+        packetParser->printL4Layer(PacketParser::PduType::UDPDATAGRAM);
         auto blockingRule = this->filterList->checkAllRules();
         if(blockingRule != nullptr) {
             std::cout << "!!! PACKET BLOCKED !!!" << std::endl;

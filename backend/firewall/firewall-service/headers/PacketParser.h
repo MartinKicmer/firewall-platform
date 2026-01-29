@@ -28,8 +28,9 @@ public:
         this->initPDUS();
     }
 
-    void printL2Layer();
-    void printL3Layer();
+    void printL2Layer(PacketParser::PduType type);
+    void printL3Layer(PacketParser::PduType type);
+    void printL4Layer(PacketParser::PduType type);
     void initPDUS();
 
     [[nodiscard]] std::shared_ptr<EthernetFrame> getEthernetFrame() { 

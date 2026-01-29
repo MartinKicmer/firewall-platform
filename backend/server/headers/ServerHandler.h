@@ -18,6 +18,7 @@ public:
     void onRequest(const Pistache::Http::Request& request, Pistache::Http::ResponseWriter response) override;
     void setupRestRoutes();
     void getLastPDUs(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response);
+    void createRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response);
 
     std::shared_ptr<Pistache::Rest::Router> getRouter() {
         return std::make_shared<Pistache::Rest::Router>(router);
