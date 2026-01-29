@@ -33,7 +33,15 @@ void IPv4Datagram::parse() {
 }
 
 void IPv4Datagram::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) {
-    std::cout << nextPayload << nextPayloadSize;
+    switch (this->protocol) {
+        case IPPROTO_UDP:
+            this->nextLayer = std::make_shared<UdpDatagram>(nextPayload,nextPayloadSize);
+            this->nextLayer->parse();
+            break;
+        default:
+            this->nextLayer = nullptr;
+            break;
+    }
 }
 
 nlohmann::json IPv4Datagram::serialize() const {
