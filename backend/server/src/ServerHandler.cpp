@@ -1,5 +1,6 @@
 #include "../headers/ServerHandler.h"
 #include <pistache/http_defs.h>
+#include <pistache/router.h>
 #include <string>
 
 
@@ -11,7 +12,22 @@ void ServerHandler::setupRestRoutes() {
     Pistache::Rest::Routes::Get(this->router, "/fireWall/redirect/:action",Pistache::Rest::Routes::bind(&ServerHandler::getLastPDUs, this));
     Pistache::Rest::Routes::Post(this->router, "/fireWall/createRule/:action",Pistache::Rest::Routes::bind(&ServerHandler::createRule, this));
     Pistache::Rest::Routes::Get(this->router, "/fireWall/selectRule/:action",Pistache::Rest::Routes::bind(&ServerHandler::selectRule, this));
+    Pistache::Rest::Routes::Delete(this->router, "/fireWall/deleteRule",Pistache::Rest::Routes::bind(&ServerHandler::deleteRule, this));
     std::cout << "All routes setup\n";
+}
+
+void ServerHandler::deleteRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
+    auto query = request.query();
+    if(!query.has("ID") || !query.has("layer") || !query.has("fromMemory")) {
+        response.send(Pistache::Http::Code::Bad_Request,"Missing arguments layer or ID or fromMemory");
+        return;
+    }
+    int ID = std::stoi(query.get("ID").value());
+    std::string layer = query.get("layer").value();
+    bool fromMemory = std::stoi(query.get("fromMemory").value());
+    this->packetBlockerGateway->removeRule(ID, layer, fromMemory);
+
+    response.send(Pistache::Http::Code::Ok);
 }
 
 void ServerHandler::selectRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
@@ -54,7 +70,11 @@ void ServerHandler::createRule(const Pistache::Rest::Request& request, Pistache:
     int ID = j["ID"];
     std::string sourceMAC = j["sourceMAC"];
     std::string destMAC = j["destMAC"];
-    this->packetBlockerGateway->createL2Rule(ID, permit, sourceMAC, destMAC);
+    bool save = false;
+    if(j.contains("save")) {
+        save  = j["save"];
+    }
+    this->packetBlockerGateway->createL2Rule(ID, permit, sourceMAC, destMAC,save);
     response.send(Pistache::Http::Code::Ok);
 }
 

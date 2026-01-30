@@ -33,6 +33,18 @@ nlohmann::json PacketBlockerGateway::getLastPDUS(int count,const std::string& la
 }
 
 
+void PacketBlockerGateway::removeRule(int ID,const std::string& layer,bool fromMemory) {
+     try {
+        boost::process::ipstream outStream;
+        boost::process::child pr(this->processPath,"remove","-rid",std::to_string(ID),"-l",layer,
+        "-memory",std::to_string(fromMemory));
+        pr.wait();
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+}
+
 nlohmann::json PacketBlockerGateway::getSelectedRules(int ID,bool permit,const std::string& layer,bool fromMemory) {
     try {
         boost::process::ipstream outStream;
@@ -60,9 +72,16 @@ nlohmann::json PacketBlockerGateway::getSelectedRules(int ID,bool permit,const s
 
 
 
-void PacketBlockerGateway::createL2Rule(int ID,bool permit,const std::string& sourceMAC,const std::string& destMAC) {
+void PacketBlockerGateway::createL2Rule(int ID,bool permit,const std::string& sourceMAC,const std::string& destMAC,bool save) {
     try {
-        boost::process::child pr(this->processPath,"-rid",std::to_string(ID),"-l","L2","-action",permit ? "permit" : "deny","-smac",sourceMAC,"-dmac",destMAC);
+        boost::process::child pr;
+        if(save) {
+             pr = boost::process::child(this->processPath,"-rid",std::to_string(ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-smac",sourceMAC,"-dmac",destMAC,"-save");
+        } else {
+            pr = boost::process::child(this->processPath,"-rid",std::to_string(ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-smac",sourceMAC,"-dmac",destMAC);
+        }
         pr.wait();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
