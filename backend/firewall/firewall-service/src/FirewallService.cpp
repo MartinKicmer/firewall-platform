@@ -119,6 +119,11 @@ void FirewallService::writePacketBlockerData(const std::string& data) {
         auto logger = FilterRuleLogger::getInstance();
         logger.log(deserializedRule);
     }
+    if(auto removeRule = std::dynamic_pointer_cast<RemoveRule>(deserializedRule->getRule())) {
+        auto logger = FilterRuleLogger::getInstance();
+        if(!removeRule->fromMemory) logger.removeRuleByID(deserializedRule);
+        return;
+    }
     if(auto redirectRule = std::dynamic_pointer_cast<RedirectRule>(deserializedRule->getRule())) {
         this->packetRedirector->setRule(deserializedRule);
         return;

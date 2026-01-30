@@ -7,9 +7,9 @@
 #include <string>
 #include <tuple>
 
-bool CLIParser::containsSelect() {
+bool CLIParser::contains(const std::string& arg) {
     for(int i = 0; i < this->argc; ++i) {
-        if(!std::strcmp(this->argv[i],"select")) {
+        if(!std::strcmp(this->argv[i],arg.c_str())) {
             return true;
         }
     }
@@ -30,14 +30,6 @@ std::shared_ptr<SelectRule> CLIParser::parseSelectRule() {
     return std::make_shared<SelectRule>(permit,ID,layer,fromMemory);
 }
 
-bool CLIParser::containsRedirect() {
-    for(int i = 0; i < this->argc - 1; ++i) {
-        if(!std::strcmp(this->argv[i],"redirect")) {
-            return true;
-        }
-    }
-    return false;
-}
 
 int CLIParser::parseRID() {
     if(this->argc < 3) throw std::runtime_error("Invalid CLI number of args\n");
@@ -65,16 +57,6 @@ std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
 
     bool permit = this->parseAction();
     return std::make_shared<L2Rule>(permit, -1, smac, dmac);
-}
-
-
-bool CLIParser::containsSave() {
-    for(int i = 0; i < this->argc; ++i) {
-        if(!std::strcmp(this->argv[i],"-save")) {
-            return true;
-        }
-    }
-    return false;
 }
 
 std::tuple<int,int,bool> CLIParser::parseIPINFO() {
@@ -108,13 +90,32 @@ std::shared_ptr<RedirectRule> CLIParser::parseRedirectRule() {
     }
     return std::make_shared<RedirectRule>(permit,layer,count);
 }
+
+
+std::shared_ptr<RemoveRule> CLIParser::parseRemoveRule() {
+    std::string layer = this->parseLayer();
+    int ID = this->parseRID();
+    bool fromMemory = false;
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"-memory")) {
+            fromMemory = (!std::strcmp(this->argv[i+1],"true"));
+        }
+    }
+    return std::make_shared<RemoveRule>(ID,fromMemory,layer);
+}
+
+
 std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
-    if(this->containsRedirect()) {
+    if(this->contains("redirect")) {
         auto rule = this->parseRedirectRule();        
         return std::make_shared<FilterRule>(rule,-1);
     }
-    if(this->containsSelect()) {
+    if(this->contains("select")) {
         auto rule = this->parseSelectRule();
+        return std::make_shared<FilterRule>(rule,this->parseRID());
+    }
+    if(this->contains("remove")) {
+        auto rule = this->parseRemoveRule();
         return std::make_shared<FilterRule>(rule,this->parseRID());
     }
     std::shared_ptr<FilterRule> filterRule;
@@ -123,7 +124,7 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
         throw std::runtime_error("Could not find RID\n");
     }
     std::string layer = this->parseLayer();
-    bool save = this->containsSave();
+    bool save = this->contains("save");
     if(layer == "L2") {
         auto rule = this->parseL2Rule();
         filterRule = std::make_shared<FilterRule>(rule,RID,save);

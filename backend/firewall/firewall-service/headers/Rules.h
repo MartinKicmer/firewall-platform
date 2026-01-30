@@ -70,6 +70,15 @@ struct L3Rule : public Rule {
 
 };
 
+
+struct RemoveRule : public Rule {
+    RemoveRule(int ID_,bool fromMemory_,const std::string& layer_) 
+    : Rule(false, -1),ID(ID_),fromMemory(fromMemory_),layer(layer_) {} 
+    int ID;
+    bool fromMemory;
+    std::string layer;
+};
+
 struct SelectRule : public Rule {
     SelectRule(bool permit_,int ID_,const std::string& layer_,bool fromMemory_) 
     : Rule(permit_,-1),ID(ID_),layer(layer_ ),fromMemory(fromMemory_) {}
@@ -78,8 +87,6 @@ struct SelectRule : public Rule {
     std::string layer;
     bool fromMemory;
 };
-
-
 struct RedirectRule : public Rule {
     RedirectRule(bool permit_,const std::string& layer_,int count_) 
     : Rule(permit_,-1),layer(layer_),count(count_) {}

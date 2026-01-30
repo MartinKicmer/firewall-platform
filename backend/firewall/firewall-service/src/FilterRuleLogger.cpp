@@ -7,6 +7,31 @@
 #include <tuple>
 #include <vector>
 
+
+void FilterRuleLogger::removeRuleByID(std::shared_ptr<FilterRule> rule) {
+    sqlite3_stmt* stmt;
+    std::string tableName;
+    std::shared_ptr<RemoveRule> rmRule = std::dynamic_pointer_cast<RemoveRule>(rule->getRule());
+    if(rmRule->layer == "L2") {
+        tableName = "l2_rules";
+    }
+    if(rmRule->layer == "L3") {
+        tableName = "l3_rules";
+    }
+    std::string sql = "DELETE FROM " + tableName + " WHERE id = ?;";
+    if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, rule->getID());
+        
+        if (sqlite3_step(stmt) == SQLITE_DONE) {
+            std::cout << "Rule " << rule->getID() << " deleted from " << tableName << std::endl;
+        }
+        sqlite3_finalize(stmt);
+    }
+
+}
+
+
+
 std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findL2RuleByAction(bool permit_) {
     std::vector<std::shared_ptr<FilterRule>> results;
     sqlite3_stmt* stmt;

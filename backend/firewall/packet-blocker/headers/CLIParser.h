@@ -23,10 +23,9 @@ private:
     std::unordered_map<std::string,int> protocols;
 
 
-    bool containsRedirect();
-    bool containsSave();
-    bool containsSelect();
+    bool contains(const std::string& arg);
 
+    std::shared_ptr<RemoveRule> parseRemoveRule();
     std::shared_ptr<SelectRule> parseSelectRule();
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();
     [[nodiscard]] std::shared_ptr<L3Rule> parseL3Rule();

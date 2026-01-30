@@ -13,6 +13,7 @@ public:
     std::vector<std::shared_ptr<FilterRule>> selectAllRules();
     std::vector<std::shared_ptr<FilterRule>> findRulesByProperties(std::shared_ptr<FilterRule> rule);
     std::shared_ptr<FilterRule> findRulesByID(int ID);
+    void removeRuleByID(std::shared_ptr<FilterRule> rule);
 private:
     FilterRuleLogger(const std::string& dbName,const std::string& schema_) : schema(schema_ ) {
         this->openDB(dbName);
