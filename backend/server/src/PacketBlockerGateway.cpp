@@ -2,6 +2,7 @@
 #include <boost/process/detail/child_decl.hpp>
 #include <cstdlib>
 #include <exception>
+#include <stdexcept>
 #include <string>
 
 nlohmann::json PacketBlockerGateway::getLastPDUS(int count,const std::string& layer,bool permit) {
@@ -30,6 +31,34 @@ nlohmann::json PacketBlockerGateway::getLastPDUS(int count,const std::string& la
         std::exit(EXIT_FAILURE);
     }
 }
+
+
+nlohmann::json PacketBlockerGateway::getSelectedRules(int ID,bool permit,const std::string& layer,bool fromMemory) {
+    try {
+        boost::process::ipstream outStream;
+        boost::process::child pr(this->processPath,"select","-rid",std::to_string(ID),"-l",layer,"-action",permit ? "permit" : "deny",
+        "-memory",std::to_string(fromMemory),boost::process::std_out > outStream);
+        std::string line;
+        std::string fullJSON;
+        while (std::getline(outStream, line)) {
+            if(line.empty()) continue;
+            fullJSON.append(line);
+        }
+        std::cout << fullJSON << std::endl;
+        nlohmann::json arr = nlohmann::json::parse(fullJSON);
+        if(!arr.is_array()) {
+            throw std::runtime_error("JSON is not an array\n");
+        }
+        pr.wait();
+        return arr;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+}
+
+
+
 
 void PacketBlockerGateway::createL2Rule(int ID,bool permit,const std::string& sourceMAC,const std::string& destMAC) {
     try {

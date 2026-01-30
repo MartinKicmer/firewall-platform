@@ -58,7 +58,7 @@ void FirewallGateway::sendRule(std::shared_ptr<FilterRule> rule) {
     }
 
     std::string seriliazedJSON = rule->serializeToJSON();
-    std::cout << seriliazedJSON << std::endl;
+    //std::cout << seriliazedJSON << std::endl;
     MQConnector connector(this->mqPath);
     connector.connect();
     connector.sendData(seriliazedJSON);

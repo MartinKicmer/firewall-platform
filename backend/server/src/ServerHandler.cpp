@@ -10,9 +10,28 @@ void ServerHandler::onRequest(const Pistache::Http::Request& request, Pistache::
 void ServerHandler::setupRestRoutes() {
     Pistache::Rest::Routes::Get(this->router, "/fireWall/redirect/:action",Pistache::Rest::Routes::bind(&ServerHandler::getLastPDUs, this));
     Pistache::Rest::Routes::Post(this->router, "/fireWall/createRule/:action",Pistache::Rest::Routes::bind(&ServerHandler::createRule, this));
+    Pistache::Rest::Routes::Get(this->router, "/fireWall/selectRule/:action",Pistache::Rest::Routes::bind(&ServerHandler::selectRule, this));
     std::cout << "All routes setup\n";
 }
 
+void ServerHandler::selectRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
+    std::string permitStr = request.param(":action").as<std::string>();
+    bool permit = (permitStr == "1" || permitStr == "true");
+    auto query = request.query();
+
+    if(!query.has("ID") || !query.has("layer") || !query.has("fromMemory") ) {
+        response.send(Pistache::Http::Code::Bad_Request,"Missing arguments layer or ID or fromMemory");
+        return;
+    }
+    int ID = std::stoi(query.get("ID").value());
+    std::string layer = query.get("layer").value();
+    bool fromMemory = std::stoi(query.get("fromMemory").value());
+    nlohmann::json ruleArr = this->packetBlockerGateway->getSelectedRules(ID, permit, layer, fromMemory);
+
+    response.headers().add<Pistache::Http::Header::ContentType>(MIME(Application, Json));
+    response.send(Pistache::Http::Code::Ok, ruleArr.dump());
+    
+}
 
 void ServerHandler::createRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
     std::string permitStr = request.param(":action").as<std::string>();
