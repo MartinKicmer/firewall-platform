@@ -23,10 +23,12 @@ add_executable(firewallService
   src/PacketRedirector.cpp
   src/FilterRuleLogger.cpp
   src/UdpDatagram.cpp
+  src/PacketblockerGateway.cpp
   headers/IPv4Datagram.h
   headers/AbstractPDU.h
   headers/RuleComparer.h
   headers/FirewallService.h
+  headers/PacketblockerGateway.h
   headers/RawSocket.h
   headers/EthernetFrame.h
   headers/PacketParser.h

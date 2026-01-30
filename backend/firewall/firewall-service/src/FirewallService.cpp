@@ -121,6 +121,12 @@ void FirewallService::writePacketBlockerData(const std::string& data) {
     }
     if(auto redirectRule = std::dynamic_pointer_cast<RedirectRule>(deserializedRule->getRule())) {
         this->packetRedirector->setRule(deserializedRule);
+        return;
     }
+    if(auto selectRule = std::dynamic_pointer_cast<SelectRule>(deserializedRule->getRule())) {
+        this->packetBlockerGateway->sendSelectedRules(deserializedRule);
+        return;
+    }
+
     this->filterList->addRule(deserializedRule);
 }

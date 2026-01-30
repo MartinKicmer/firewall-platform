@@ -16,6 +16,7 @@ private:
     std::thread helper;
 
     void printRedirectedPackets();
+    void printSelectedRules();
 };
 
 

@@ -8,6 +8,7 @@
 #include <array>
 #include <sstream>
 #include <iostream>
+#include "PacketblockerGateway.h"
 #include "RawSocket.h"
 #include "PacketParser.h"
 #include "FilterRuleList.h"
@@ -48,6 +49,7 @@ public:
         this->filterList = std::make_shared<FilterRuleList>();
         this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
         this->packetRedirector = std::make_shared<PacketRedirector>();
+        this->packetBlockerGateway = std::make_unique<PacketblockerGateway>("/fireWallBlocker");
     }
     ~FirewallService() {
         if(this->packetBlockerT.joinable()) {
@@ -66,4 +68,5 @@ private:
     bool redirect;
     std::shared_ptr<FilterRuleList> filterList;
     std::shared_ptr<PacketRedirector> packetRedirector;
+    std::unique_ptr<PacketblockerGateway> packetBlockerGateway;
 };

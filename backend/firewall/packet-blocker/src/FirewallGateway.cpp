@@ -24,11 +24,37 @@ void FirewallGateway::printRedirectedPackets() {
 }
 
 
+void FirewallGateway::printSelectedRules() {
+    this->helper = std::thread([]() { 
+            MQConnector reader("/fireWallBlocker");
+            reader.create(); 
+            while(true) {
+                const auto& [isEnd, data] = reader.recieveData();
+                if(isEnd) {
+                    //std::cout << "Redirect finished (end received)" << std::endl;
+                    break; 
+                }
+                try {
+                    auto json = nlohmann::json::parse(data);
+                    std::cout << json.dump() << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << e.what() << std::endl;
+                    break;
+                }
+            }
+            reader.close();
+    });
+}
+
+
 
 void FirewallGateway::sendRule(std::shared_ptr<FilterRule> rule) {
 
     if(auto redirectRule = std::dynamic_pointer_cast<RedirectRule>(rule->getRule())){
            this->printRedirectedPackets();
+    }
+    if(auto selectRule = std::dynamic_pointer_cast<SelectRule>(rule->getRule())) {
+            this->printSelectedRules();
     }
 
     std::string seriliazedJSON = rule->serializeToJSON();

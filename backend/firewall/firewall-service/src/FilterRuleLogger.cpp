@@ -5,6 +5,109 @@
 #include <sstream>
 #include <stdexcept>
 #include <tuple>
+#include <vector>
+
+std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findL2RuleByAction(bool permit_) {
+    std::vector<std::shared_ptr<FilterRule>> results;
+    sqlite3_stmt* stmt;
+    const char* sql = "SELECT id, permit, limit_count, source_mac, dest_mac FROM l2_rules WHERE permit = ?;";
+
+    if (sqlite3_prepare_v2(this->db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "SQL error (prepare): " << sqlite3_errmsg(this->db) << std::endl;
+        return results; 
+    }
+
+    sqlite3_bind_int(stmt, 1, permit_ ? 1 : 0);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {    
+        int ID = sqlite3_column_int(stmt, 0);
+        bool permit = (sqlite3_column_int(stmt, 1) != 0); 
+        int limitCount = sqlite3_column_int(stmt, 2);
+        
+        std::string sourceMAC = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        std::string destMAC = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
+        
+        auto rule = std::make_shared<L2Rule>(permit,limitCount,sourceMAC,destMAC);
+        results.push_back(std::make_shared<FilterRule>(rule,ID));
+    }
+
+    sqlite3_finalize(stmt);
+    
+    return results;
+}
+
+std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findL3RuleByAction(bool permit) {
+    std::vector<std::shared_ptr<FilterRule>> results;
+    sqlite3_stmt* stmt;
+    
+    const char* sql = "SELECT id, permit, limit_count, source_ip, source_prefix, "
+                      "dest_ip, dest_prefix, ttl_max, ttl_min, protocol, tos, allow_fragments "
+                      "FROM l3_rules WHERE permit = ?;";
+
+    if (sqlite3_prepare_v2(this->db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "SQL error (prepare L3): " << sqlite3_errmsg(this->db) << std::endl;
+        return results; 
+    }
+
+    sqlite3_bind_int(stmt, 1, permit ? 1 : 0);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        int ID = sqlite3_column_int(stmt, 0);
+        bool p = sqlite3_column_int(stmt, 1) != 0;
+        int limitCount = sqlite3_column_int(stmt, 2);
+        
+        const char* srcIpPtr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        const char* destIpPtr = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        
+        std::string sourceIP = srcIpPtr ? srcIpPtr : "";
+        int sourcePref = sqlite3_column_int(stmt, 4);
+        std::string destIP = destIpPtr ? destIpPtr : "";
+        int destPref = sqlite3_column_int(stmt, 6);
+        
+        int ttlMax = sqlite3_column_int(stmt, 7);
+        int ttlMin = sqlite3_column_int(stmt, 8);
+        int protocol = sqlite3_column_int(stmt, 9);
+        int tos = sqlite3_column_int(stmt, 10);
+        bool allowedFrag = sqlite3_column_int(stmt, 11) != 0;
+
+        std::tuple<std::string, int> source{sourceIP, sourcePref};
+        std::tuple<std::string, int> dest{destIP, destPref};
+        
+        auto rule = std::make_shared<L3Rule>(
+            p, limitCount, source, dest, ttlMax, ttlMin, protocol, tos, allowedFrag
+        );
+
+        results.push_back(std::make_shared<FilterRule>(rule, ID));
+    }
+
+    sqlite3_finalize(stmt);
+    return results;
+}
+
+
+std::shared_ptr<FilterRule> FilterRuleLogger::findRulesByID(int ID) {
+    auto allRules = this->selectAllRules();
+    for(auto rule : allRules) {
+        if(rule->getID() == ID) {
+            return rule;
+        }
+    }
+    return nullptr;
+}
+
+std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findRulesByProperties(std::shared_ptr<FilterRule> filterRule) {
+    std::vector<std::shared_ptr<FilterRule>> results;
+    
+    auto selectRule = std::dynamic_pointer_cast<SelectRule>(filterRule->getRule());
+    if(selectRule->layer == "L2") {
+        results = this->findL2RuleByAction(selectRule->permit);
+    }
+    if(selectRule->layer == "L3") {
+        results = this->findL3RuleByAction(selectRule->permit);
+    }
+    return results;
+
+}
 
 FilterRuleLogger& FilterRuleLogger::getInstance() {
     static FilterRuleLogger logger("../rules.db","../schema.sql");
@@ -167,12 +270,11 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectL2Rules() {
 }
 
 std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectAllRules() {
-    std::vector<std::shared_ptr<FilterRule>> allRules;
     auto l2rules = this->selectL2Rules();
     auto l3rules = this->selectL3Rules();
 
-    allRules.assign(l2rules.begin(),l2rules.end());
-    allRules.assign(l3rules.begin(),l3rules.end());
-
+    std::vector<std::shared_ptr<FilterRule>> allRules(l2rules);
+    allRules.insert(allRules.end(), l2rules.begin(), l2rules.end());
+    allRules.insert(allRules.end(), l3rules.begin(), l3rules.end());
     return allRules;
 }
