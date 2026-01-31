@@ -50,7 +50,7 @@ EthernetRequest ServerHandler::parseEthernetRequest(const Pistache::Rest::Reques
     
     req.ID = j["ID"].get<int>();
     if (j.contains("limitCount")) req.limitCount = j["limitCount"].get<int>();
-    if (j.contains("save"))       req.save = j["save"].get<bool>(); // V JSONu už posílej true/false
+    if (j.contains("save"))       req.save = j["save"].get<bool>(); 
     if (j.contains("sourceMAC"))  req.source = j["sourceMAC"].get<std::string>();
     if (j.contains("destMAC"))    req.dest = j["destMAC"].get<std::string>();
 

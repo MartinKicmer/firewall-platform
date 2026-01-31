@@ -93,12 +93,12 @@ void PacketBlockerGateway::createL3Rule(IPv4Request req,bool permit) {
         const auto& [dest,destPref] = req.dest;
         if(req.save) {
              pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
-        "-l","L2","-action",permit ? "permit" : "deny","-sa",
+        "-l","L3","-action",permit ? "permit" : "deny","-sa",
         source + "/" + std::to_string(sourcePref),dest + "/" + std::to_string(destPref),
          "-ttlMin",std::to_string(req.ttlMin),"-ttlMax",std::to_string(req.ttlMax),"-proto",req.proto,"-allowFrag",std::to_string(req.allowFragments),"-tos",std::to_string(req.tos),"-save");
         } else {
                pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
-        "-l","L2","-action",permit ? "permit" : "deny","-sa",
+        "-l","L3","-action",permit ? "permit" : "deny","-sa",
         source + "/" + std::to_string(sourcePref),dest + "/" + std::to_string(destPref),
          "-ttlMin",std::to_string(req.ttlMin),"-ttlMax",std::to_string(req.ttlMax),"-proto",req.proto,"-allowFrag",std::to_string(req.allowFragments),"-tos",std::to_string(req.tos));
         }
