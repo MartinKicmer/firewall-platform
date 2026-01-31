@@ -4,6 +4,7 @@
 CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o
  /home/andrew/firewall-platform/backend/server/src/PacketBlockerGateway.cpp
  /home/andrew/firewall-platform/backend/server/headers/PacketBlockerGateway.h
+ /home/andrew/firewall-platform/backend/server/headers/RequestTypes.h
  /usr/include/alloca.h
  /usr/include/arpa/inet.h
  /usr/include/asm-generic/bitsperlong.h
@@ -1974,6 +1975,7 @@ CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o
 CMakeFiles/server.dir/src/ServerHandler.cpp.o
  /home/andrew/firewall-platform/backend/server/src/ServerHandler.cpp
  /home/andrew/firewall-platform/backend/server/headers/PacketBlockerGateway.h
+ /home/andrew/firewall-platform/backend/server/headers/RequestTypes.h
  /home/andrew/firewall-platform/backend/server/headers/ServerHandler.h
  /usr/include/alloca.h
  /usr/include/arpa/inet.h
@@ -4011,6 +4013,7 @@ CMakeFiles/server.dir/src/ServerHandler.cpp.o
 CMakeFiles/server.dir/src/main.cpp.o
  /home/andrew/firewall-platform/backend/server/src/main.cpp
  /home/andrew/firewall-platform/backend/server/headers/PacketBlockerGateway.h
+ /home/andrew/firewall-platform/backend/server/headers/RequestTypes.h
  /home/andrew/firewall-platform/backend/server/headers/ServerHandler.h
  /usr/include/alloca.h
  /usr/include/arpa/inet.h

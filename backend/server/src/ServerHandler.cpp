@@ -1,6 +1,10 @@
 #include "../headers/ServerHandler.h"
+#include <cstdlib>
+#include <exception>
+#include <iostream>
 #include <pistache/http_defs.h>
 #include <pistache/router.h>
+#include <stdexcept>
 #include <string>
 
 
@@ -18,16 +22,79 @@ void ServerHandler::setupRestRoutes() {
 
 void ServerHandler::deleteRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
     auto query = request.query();
-    if(!query.has("ID") || !query.has("layer") || !query.has("fromMemory")) {
-        response.send(Pistache::Http::Code::Bad_Request,"Missing arguments layer or ID or fromMemory");
+    
+    try {
+        if(!query.has("ID") || !query.has("layer") || !query.has("fromMemory")) {
+            response.send(Pistache::Http::Code::Bad_Request, "Missing arguments");
+            return;
+        }
+
+        int ID = std::stoi(query.get("ID").value());
+        std::string layer = query.get("layer").value();
+        bool fromMemory = (query.get("fromMemory").value() == "1");
+
+        this->packetBlockerGateway->removeRule(ID, layer, fromMemory);
+        response.send(Pistache::Http::Code::Ok, "Deleted");
+    } 
+    catch (const std::exception& e) {
+        response.send(Pistache::Http::Code::Bad_Request, "Invalid ID format");
         return;
     }
-    int ID = std::stoi(query.get("ID").value());
-    std::string layer = query.get("layer").value();
-    bool fromMemory = std::stoi(query.get("fromMemory").value());
-    this->packetBlockerGateway->removeRule(ID, layer, fromMemory);
+}
 
-    response.send(Pistache::Http::Code::Ok);
+EthernetRequest ServerHandler::parseEthernetRequest(const Pistache::Rest::Request& request) {
+    auto j = nlohmann::json::parse(request.body());
+    EthernetRequest req;
+
+    if (!j.contains("ID")) throw std::runtime_error("Missing argument ID");
+    
+    req.ID = j["ID"].get<int>();
+    if (j.contains("limitCount")) req.limitCount = j["limitCount"].get<int>();
+    if (j.contains("save"))       req.save = j["save"].get<bool>(); // V JSONu už posílej true/false
+    if (j.contains("sourceMAC"))  req.source = j["sourceMAC"].get<std::string>();
+    if (j.contains("destMAC"))    req.dest = j["destMAC"].get<std::string>();
+
+    return req;
+}
+IPv4Request ServerHandler::parseIPv4Request(const Pistache::Rest::Request& request) {
+    auto j = nlohmann::json::parse(request.body());
+    IPv4Request req;
+
+    if (!j.contains("ID")) throw std::runtime_error("Missing argument ID");
+
+    req.ID = j["ID"].get<int>();
+    if (j.contains("limitCount")) req.limitCount = j["limitCount"].get<int>();
+    if (j.contains("save"))       req.save = j["save"].get<bool>();
+
+    if (j.contains("source") && j["source"].is_array()) {
+        req.source = std::make_tuple(j["source"][0].get<std::string>(), j["source"][1].get<int>());
+    }
+
+    if (j.contains("dest") && j["dest"].is_array()) {
+        req.dest = std::make_tuple(j["dest"][0].get<std::string>(), j["dest"][1].get<int>());
+    }
+
+    if (j.contains("ttlMax"))    req.ttlMax = j["ttlMax"].get<int>();
+    if (j.contains("ttlMin"))    req.ttlMin = j["ttlMin"].get<int>();
+    if (j.contains("protocol"))  req.proto = j["protocol"].get<std::string>();
+    if (j.contains("tos"))       req.tos = j["tos"].get<int>();
+    if (j.contains("allowFrag")) req.allowFragments = j["allowFrag"].get<bool>();
+
+    return req;
+}
+L4SimpleRequest ServerHandler::parseL4SimpleRequest(const Pistache::Rest::Request& request) {
+    auto j = nlohmann::json::parse(request.body());
+    L4SimpleRequest req;
+
+    if (!j.contains("ID")) throw std::runtime_error("Missing argument ID");
+
+    req.ID = j["ID"].get<int>();
+    if (j.contains("limitCount")) req.limitCount = j["limitCount"].get<int>();
+    if (j.contains("save"))       req.save = j["save"].get<bool>();
+    if (j.contains("sourcePort")) req.sPort = j["sourcePort"].get<int>();
+    if (j.contains("destPort"))   req.dPort = j["destPort"].get<int>(); 
+
+    return req;
 }
 
 void ServerHandler::selectRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
@@ -62,19 +129,26 @@ void ServerHandler::createRule(const Pistache::Rest::Request& request, Pistache:
         response.send(Pistache::Http::Code::Bad_Request,"Missing argument layer\n");
         return;
     }
-    if(!j.contains("ID")) {
-        response.send(Pistache::Http::Code::Bad_Request,"Missing argument ID\n");
-        return;
+    std::string layer = j["layer"].get<std::string>();
+    try {
+        if(layer == "L2") {
+         EthernetRequest req = this->parseEthernetRequest(request);
+         this->packetBlockerGateway->createL2Rule(req,permit);
+        }
+        if(layer == "L3") {
+            IPv4Request req = this->parseIPv4Request(request);
+            this->packetBlockerGateway->createL3Rule(req, permit);
+        }
+        if(layer == "L4Simple") {
+            L4SimpleRequest req = this->parseL4SimpleRequest(request);
+            this->packetBlockerGateway->createL4simpleRule(req,permit);
+        }
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        response.send(Pistache::Http::Code::Bad_Request);
+        std::exit(EXIT_FAILURE);
     }
-    std::string layer = j["layer"];
-    int ID = j["ID"];
-    std::string sourceMAC = j["sourceMAC"];
-    std::string destMAC = j["destMAC"];
-    bool save = false;
-    if(j.contains("save")) {
-        save  = j["save"];
-    }
-    this->packetBlockerGateway->createL2Rule(ID, permit, sourceMAC, destMAC,save);
+   
     response.send(Pistache::Http::Code::Ok);
 }
 

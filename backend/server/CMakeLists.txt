@@ -12,10 +12,11 @@ pkg_check_modules(PISTACHE REQUIRED IMPORTED_TARGET libpistache)
 include_directories(${Boost_INCLUDE_DIRS})
 add_executable(server 
     src/main.cpp 
-    src/ServerHandler.cpp 
+    src/ServerHandler.cpp
     src/PacketBlockerGateway.cpp 
     headers/ServerHandler.h
-    headers/PacketBlockerGateway.h 
+    headers/PacketBlockerGateway.h
+    headers/RequestTypes.h   
     
     )
 

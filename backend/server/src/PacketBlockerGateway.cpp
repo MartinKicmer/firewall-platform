@@ -35,9 +35,8 @@ nlohmann::json PacketBlockerGateway::getLastPDUS(int count,const std::string& la
 
 void PacketBlockerGateway::removeRule(int ID,const std::string& layer,bool fromMemory) {
      try {
-        boost::process::ipstream outStream;
         boost::process::child pr(this->processPath,"remove","-rid",std::to_string(ID),"-l",layer,
-        "-memory",std::to_string(fromMemory));
+        "-memory",fromMemory ? "true" : "false");
         pr.wait();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
@@ -69,18 +68,56 @@ nlohmann::json PacketBlockerGateway::getSelectedRules(int ID,bool permit,const s
     }
 }
 
+void PacketBlockerGateway::createL4simpleRule(L4SimpleRequest req,bool permit) {
+     try {
+        boost::process::child pr;
+        if(req.save) {
+             pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort),"-save");
+        } else {
+            pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort));
+        }
+        pr.wait();
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+}
 
+void PacketBlockerGateway::createL3Rule(IPv4Request req,bool permit) {
+    try {
+        // -rid 1 -l L3 -action deny -sa ../prefix -da ../prefix -ttlMax ... -ttlMin ... -proto ... -allowFrag ... -tos ...
+        boost::process::child pr;
+        const auto& [source,sourcePref] = req.source;
+        const auto& [dest,destPref] = req.dest;
+        if(req.save) {
+             pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-sa",
+        source + "/" + std::to_string(sourcePref),dest + "/" + std::to_string(destPref),
+         "-ttlMin",std::to_string(req.ttlMin),"-ttlMax",std::to_string(req.ttlMax),"-proto",req.proto,"-allowFrag",std::to_string(req.allowFragments),"-tos",std::to_string(req.tos),"-save");
+        } else {
+               pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-sa",
+        source + "/" + std::to_string(sourcePref),dest + "/" + std::to_string(destPref),
+         "-ttlMin",std::to_string(req.ttlMin),"-ttlMax",std::to_string(req.ttlMax),"-proto",req.proto,"-allowFrag",std::to_string(req.allowFragments),"-tos",std::to_string(req.tos));
+        }
+        pr.wait();
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+}
 
-
-void PacketBlockerGateway::createL2Rule(int ID,bool permit,const std::string& sourceMAC,const std::string& destMAC,bool save) {
+void PacketBlockerGateway::createL2Rule(EthernetRequest req,bool permit) {
     try {
         boost::process::child pr;
-        if(save) {
-             pr = boost::process::child(this->processPath,"-rid",std::to_string(ID),
-        "-l","L2","-action",permit ? "permit" : "deny","-smac",sourceMAC,"-dmac",destMAC,"-save");
+        if(req.save) {
+             pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-smac",req.source,"-dmac",req.dest,"-save");
         } else {
-            pr = boost::process::child(this->processPath,"-rid",std::to_string(ID),
-        "-l","L2","-action",permit ? "permit" : "deny","-smac",sourceMAC,"-dmac",destMAC);
+            pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L2","-action",permit ? "permit" : "deny","-smac",req.source,"-dmac",req.source);
         }
         pr.wait();
     } catch (const std::exception& e) {

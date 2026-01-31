@@ -5,6 +5,7 @@
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
 #include "PacketBlockerGateway.h"
+#include "RequestTypes.h"
 class ServerHandler : public Pistache::Http::Handler {
 public:
 
@@ -24,6 +25,11 @@ public:
     std::shared_ptr<Pistache::Rest::Router> getRouter() {
         return std::make_shared<Pistache::Rest::Router>(router);
     }
+
+
+    EthernetRequest parseEthernetRequest(const Pistache::Rest::Request& request);
+    IPv4Request parseIPv4Request(const Pistache::Rest::Request& request);
+    L4SimpleRequest parseL4SimpleRequest(const Pistache::Rest::Request& request);
 
 private:
     Pistache::Rest::Router router;

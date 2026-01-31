@@ -3,6 +3,7 @@
 
 CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o: /home/andrew/firewall-platform/backend/server/src/PacketBlockerGateway.cpp \
   /home/andrew/firewall-platform/backend/server/headers/PacketBlockerGateway.h \
+  /home/andrew/firewall-platform/backend/server/headers/RequestTypes.h \
   /usr/include/alloca.h \
   /usr/include/arpa/inet.h \
   /usr/include/asm-generic/bitsperlong.h \
@@ -1972,6 +1973,7 @@ CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o: /home/andrew/firewall-plat
 
 CMakeFiles/server.dir/src/ServerHandler.cpp.o: /home/andrew/firewall-platform/backend/server/src/ServerHandler.cpp \
   /home/andrew/firewall-platform/backend/server/headers/PacketBlockerGateway.h \
+  /home/andrew/firewall-platform/backend/server/headers/RequestTypes.h \
   /home/andrew/firewall-platform/backend/server/headers/ServerHandler.h \
   /usr/include/alloca.h \
   /usr/include/arpa/inet.h \
@@ -4008,6 +4010,7 @@ CMakeFiles/server.dir/src/ServerHandler.cpp.o: /home/andrew/firewall-platform/ba
 
 CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/server/src/main.cpp \
   /home/andrew/firewall-platform/backend/server/headers/PacketBlockerGateway.h \
+  /home/andrew/firewall-platform/backend/server/headers/RequestTypes.h \
   /home/andrew/firewall-platform/backend/server/headers/ServerHandler.h \
   /usr/include/alloca.h \
   /usr/include/arpa/inet.h \
@@ -7193,9 +7196,9 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 
 /usr/include/boost/preprocessor/arithmetic/limits/inc_256.hpp:
 
-/usr/include/c++/13/bits/stl_raw_storage_iter.h:
+/usr/include/nlohmann/detail/iterators/iteration_proxy.hpp:
 
-/usr/include/boost/fusion/iterator/detail/advance.hpp:
+/usr/include/boost/preprocessor/arithmetic/inc.hpp:
 
 /usr/include/boost/type_traits/is_integral.hpp:
 
@@ -7831,6 +7834,8 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 
 /usr/include/boost/mpl/O1_size_fwd.hpp:
 
+/usr/include/boost/asio/multiple_exceptions.hpp:
+
 /usr/include/boost/asio/detail/initiate_dispatch.hpp:
 
 /usr/include/x86_64-linux-gnu/sys/poll.h:
@@ -8029,8 +8034,6 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 
 /usr/include/boost/mpl/aux_/include_preprocessed.hpp:
 
-/usr/include/boost/asio/multiple_exceptions.hpp:
-
 /usr/include/boost/fusion/container/vector/detail/equal_to_impl.hpp:
 
 /usr/include/boost/asio/detail/op_queue.hpp:
@@ -8123,47 +8126,23 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 
 /usr/include/boost/algorithm/string/config.hpp:
 
-/usr/include/c++/13/ext/numeric_traits.h:
+/usr/include/boost/fusion/container/list/detail/reverse_cons.hpp:
 
-/usr/include/boost/algorithm/string/predicate_facade.hpp:
+/usr/include/boost/fusion/view/zip_view/detail/begin_impl.hpp:
 
-/usr/include/boost/preprocessor/list/limits/fold_left_256.hpp:
+/usr/include/c++/13/cerrno:
 
-/usr/include/boost/fusion/view/nview/detail/equal_to_impl.hpp:
+/usr/include/boost/asio/detail/std_fenced_block.hpp:
 
-/usr/include/boost/system/errc.hpp:
+/usr/include/boost/optional/detail/optional_relops.hpp:
 
-/usr/include/boost/fusion/container/vector/detail/begin_impl.hpp:
+/usr/include/boost/concept/detail/concept_undef.hpp:
 
-/usr/include/boost/fusion/sequence/intrinsic/at.hpp:
+/usr/include/boost/asio/impl/write.hpp:
 
-/usr/include/wchar.h:
+/usr/include/boost/asio/detail/impl/null_event.ipp:
 
-/usr/include/boost/asio/execution/impl/bad_executor.ipp:
-
-/usr/include/c++/13/bits/ranges_algo.h:
-
-/usr/include/boost/fusion/view/flatten_view.hpp:
-
-/usr/include/boost/asio/io_context.hpp:
-
-/usr/include/c++/13/bits/std_function.h:
-
-/usr/include/boost/mpl/distance_fwd.hpp:
-
-/usr/include/c++/13/bits/basic_string.h:
-
-/usr/include/boost/function/detail/maybe_include.hpp:
-
-/usr/include/boost/fusion/view/nview/detail/deref_impl.hpp:
-
-/usr/include/boost/move/detail/addressof.hpp:
-
-/usr/include/boost/mpl/aux_/insert_impl.hpp:
-
-/usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h:
-
-/usr/include/boost/mpl/quote.hpp:
+/usr/include/boost/mpl/assert.hpp:
 
 /usr/include/boost/fusion/container.hpp:
 
@@ -8219,15 +8198,21 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 
 /usr/include/boost/cerrno.hpp:
 
-/usr/include/boost/fusion/adapted/std_tuple/detail/size_impl.hpp:
-
-/usr/include/boost/fusion/view/joint_view/detail/end_impl.hpp:
-
 /usr/include/boost/fusion/adapted/std_tuple/tag_of.hpp:
 
 /usr/include/boost/asio/executor_work_guard.hpp:
 
+/usr/include/asm-generic/sockios.h:
+
 /usr/include/boost/asio/detail/cstdint.hpp:
+
+/usr/include/boost/range/distance.hpp:
+
+/usr/include/boost/filesystem/detail/path_traits.hpp:
+
+/usr/include/boost/asio/any_io_executor.hpp:
+
+/usr/include/boost/mpl/aux_/numeric_op.hpp:
 
 /usr/include/boost/asio/traits/require_free.hpp:
 
@@ -8357,15 +8342,59 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 
 /usr/include/boost/asio/detail/impl/service_registry.hpp:
 
-/usr/include/asm-generic/sockios.h:
+/usr/include/c++/13/ext/numeric_traits.h:
+
+/usr/include/boost/algorithm/string/predicate_facade.hpp:
+
+/usr/include/boost/preprocessor/list/limits/fold_left_256.hpp:
+
+/usr/include/boost/fusion/view/nview/detail/equal_to_impl.hpp:
+
+/usr/include/boost/fusion/view/joint_view/detail/end_impl.hpp:
+
+/usr/include/boost/fusion/adapted/std_tuple/detail/size_impl.hpp:
+
+/usr/include/boost/system/errc.hpp:
+
+/usr/include/boost/fusion/container/vector/detail/begin_impl.hpp:
+
+/usr/include/boost/fusion/sequence/intrinsic/at.hpp:
+
+/usr/include/wchar.h:
+
+/usr/include/boost/asio/execution/impl/bad_executor.ipp:
+
+/usr/include/c++/13/bits/ranges_algo.h:
+
+/usr/include/boost/fusion/view/flatten_view.hpp:
+
+/usr/include/boost/asio/io_context.hpp:
+
+/usr/include/c++/13/bits/std_function.h:
+
+/usr/include/boost/mpl/distance_fwd.hpp:
+
+/usr/include/c++/13/bits/basic_string.h:
+
+/usr/include/boost/function/detail/maybe_include.hpp:
+
+/usr/include/boost/fusion/view/nview/detail/deref_impl.hpp:
 
 /usr/include/c++/13/sstream:
 
 /usr/include/boost/process/filesystem.hpp:
 
+/usr/include/boost/asio/detail/posix_static_mutex.hpp:
+
 /usr/include/boost/algorithm/string/detail/formatter.hpp:
 
-/usr/include/boost/asio/detail/posix_static_mutex.hpp:
+/usr/include/boost/move/detail/addressof.hpp:
+
+/usr/include/boost/mpl/aux_/insert_impl.hpp:
+
+/usr/lib/gcc/x86_64-linux-gnu/13/include/syslimits.h:
+
+/usr/include/boost/mpl/quote.hpp:
 
 /usr/include/boost/system/detail/cerrno.hpp:
 
@@ -8494,32 +8523,6 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 /usr/include/boost/next_prior.hpp:
 
 /usr/include/boost/asio/associated_cancellation_slot.hpp:
-
-/usr/include/boost/fusion/container/list/detail/reverse_cons.hpp:
-
-/usr/include/boost/fusion/view/zip_view/detail/begin_impl.hpp:
-
-/usr/include/c++/13/cerrno:
-
-/usr/include/boost/asio/detail/std_fenced_block.hpp:
-
-/usr/include/boost/optional/detail/optional_relops.hpp:
-
-/usr/include/boost/concept/detail/concept_undef.hpp:
-
-/usr/include/boost/asio/impl/write.hpp:
-
-/usr/include/boost/asio/detail/impl/null_event.ipp:
-
-/usr/include/boost/mpl/assert.hpp:
-
-/usr/include/boost/range/distance.hpp:
-
-/usr/include/boost/filesystem/detail/path_traits.hpp:
-
-/usr/include/boost/asio/any_io_executor.hpp:
-
-/usr/include/boost/mpl/aux_/numeric_op.hpp:
 
 /usr/include/boost/algorithm/string/predicate.hpp:
 
@@ -9009,11 +9012,11 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 
 /usr/include/boost/fusion/sequence/intrinsic/value_at.hpp:
 
+/usr/include/c++/13/bits/stl_raw_storage_iter.h:
+
+/usr/include/boost/fusion/iterator/detail/advance.hpp:
+
 /usr/include/boost/fusion/iterator/detail/segment_sequence.hpp:
-
-/usr/include/nlohmann/detail/iterators/iteration_proxy.hpp:
-
-/usr/include/boost/preprocessor/arithmetic/inc.hpp:
 
 /usr/include/c++/13/tr1/bessel_function.tcc:
 
@@ -10066,6 +10069,8 @@ CMakeFiles/server.dir/src/main.cpp.o: /home/andrew/firewall-platform/backend/ser
 /usr/include/boost/optional.hpp:
 
 /usr/include/boost/preprocessor/identity.hpp:
+
+/home/andrew/firewall-platform/backend/server/headers/RequestTypes.h:
 
 /usr/include/boost/optional/detail/optional_aligned_storage.hpp:
 

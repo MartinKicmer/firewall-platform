@@ -137,7 +137,7 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
         throw std::runtime_error("Could not find RID\n");
     }
     std::string layer = this->parseLayer();
-    bool save = this->contains("save");
+    bool save = this->contains("-save");
     if(layer == "L2") {
         auto rule = this->parseL2Rule();
         filterRule = std::make_shared<FilterRule>(rule,RID,save);
