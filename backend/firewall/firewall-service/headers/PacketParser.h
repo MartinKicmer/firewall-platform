@@ -15,6 +15,7 @@
 #include <netinet/ip.h>
 #include <array>
 #include "AbstractPDU.h"
+#include "UdpDatagram.h"
 #include <unordered_map>
 
 class PacketParser {
@@ -38,7 +39,11 @@ public:
     }
     [[nodiscard]] std::shared_ptr<IPv4Datagram> getIPv4Datagram()   {   
         return std::static_pointer_cast<IPv4Datagram>(this->pdus[PduType::IPV4DATAGRAM]);
-     }
+    }
+
+    [[nodiscard]] std::shared_ptr<UdpDatagram> getUDPDatagram() {
+        return std::static_pointer_cast<UdpDatagram>(this->pdus[PduType::UDPDATAGRAM]);
+    } 
     
 private:
     std::unordered_map<int,std::shared_ptr<AbstractPDU>> pdus;

@@ -25,6 +25,7 @@ private:
 
     bool contains(const std::string& arg);
 
+    std::shared_ptr<L4SimpleRule> parseSimpleL4Rule();
     std::shared_ptr<RemoveRule> parseRemoveRule();
     std::shared_ptr<SelectRule> parseSelectRule();
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();

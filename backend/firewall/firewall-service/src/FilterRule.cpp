@@ -49,6 +49,15 @@ std::string FilterRule::serializeToJSON()  {
     if(auto l3 = std::dynamic_pointer_cast<L3Rule>(this->rule)) {
         this->formatL3ToJSON(j,l3);
     }
+    if(auto l4Simple = std::dynamic_pointer_cast<L4SimpleRule>(this->rule)) {
+        j["ruleType"] = "L4Simple";
+        j["data"] = {
+            {"permit", l4Simple->permit},
+            {"limitCount", l4Simple->limitCount},
+            {"sourcePort", l4Simple->sPort},
+            {"destPort", l4Simple->dPort}
+        };
+    }
     return j.dump();
 }
 
@@ -105,6 +114,13 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
 
     if(j["ruleType"] == "L3") {
         rule = deserializeL3Rule(j);
+    }
+
+    if(j["ruleType"] == "L4Simple") {
+        rule = std::make_shared<L4SimpleRule>(j["data"]["permit"],
+            j["data"]["limitCount"],
+            j["data"]["sourcePort"],
+            j["data"]["destPort"]);
     }
     return std::make_shared<FilterRule>(rule, id,save);
 }

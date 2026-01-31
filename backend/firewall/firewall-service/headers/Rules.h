@@ -71,6 +71,22 @@ struct L3Rule : public Rule {
 };
 
 
+struct L4SimpleRule : Rule {
+    L4SimpleRule(bool permit_,
+        int limitCount_,int sPort_,int dPort_) : Rule(permit_,limitCount_) , sPort(sPort_),dPort(dPort_) {}
+    int sPort;
+    int dPort;
+
+    friend std::ostream& operator<<(std::ostream& o, const L4SimpleRule& rule) {
+        std::cout << "L4Simple RULE\n---------\n";
+        std::cout << "ACTION: " << (rule.permit ? "permit" : "deny") << "\n";
+        std::cout << "LIMIT COUNT: " << rule.limitCount << "\n";
+        std::cout << "SOURCE PORT: " << rule.sPort << "\n";
+        std::cout << "DEST PORT: " << rule.dPort << "\n";
+        return o;
+    }
+};
+
 struct RemoveRule : public Rule {
     RemoveRule(int ID_,bool fromMemory_,const std::string& layer_) 
     : Rule(false, -1),ID(ID_),fromMemory(fromMemory_),layer(layer_) {} 

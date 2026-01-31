@@ -112,6 +112,11 @@ void FirewallService::startPacketBlockerCommunication() {
     }
 }
 
+
+void FirewallService::removeRuleFromMemory(std::shared_ptr<FilterRule> rule) {
+    this->filterList->removeRule(rule);
+}
+
 void FirewallService::writePacketBlockerData(const std::string& data) {
     std::cout << "Adding rule: " << data << std::endl;
     auto deserializedRule = FilterRule::deserialize(data);
@@ -122,6 +127,7 @@ void FirewallService::writePacketBlockerData(const std::string& data) {
     if(auto removeRule = std::dynamic_pointer_cast<RemoveRule>(deserializedRule->getRule())) {
         auto logger = FilterRuleLogger::getInstance();
         if(!removeRule->fromMemory) logger.removeRuleByID(deserializedRule);
+        else this->filterList->removeRule(deserializedRule);
         return;
     }
     if(auto redirectRule = std::dynamic_pointer_cast<RedirectRule>(deserializedRule->getRule())) {

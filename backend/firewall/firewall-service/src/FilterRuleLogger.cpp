@@ -18,6 +18,9 @@ void FilterRuleLogger::removeRuleByID(std::shared_ptr<FilterRule> rule) {
     if(rmRule->layer == "L3") {
         tableName = "l3_rules";
     }
+    if(rmRule->layer == "L4Simple") {
+        tableName = "l4Simple_rules";
+    }
     std::string sql = "DELETE FROM " + tableName + " WHERE id = ?;";
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
         sqlite3_bind_int(stmt, 1, rule->getID());
@@ -30,7 +33,32 @@ void FilterRuleLogger::removeRuleByID(std::shared_ptr<FilterRule> rule) {
 
 }
 
+std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findL4SimpleRuleByAction(bool permit_) {
+    std::vector<std::shared_ptr<FilterRule>> results;
+    sqlite3_stmt* stmt;
+    const char* sql = "SELECT id, permit, limit_count, source_port,dest_port FROM l4Simple_rules WHERE permit = ?;";
 
+    if (sqlite3_prepare_v2(this->db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "SQL error (prepare): " << sqlite3_errmsg(this->db) << std::endl;
+        return results; 
+    }
+
+    sqlite3_bind_int(stmt, 1, permit_ ? 1 : 0);
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {    
+        int ID = sqlite3_column_int(stmt, 0);
+        bool permit = (sqlite3_column_int(stmt, 1) != 0); 
+        int limitCount = sqlite3_column_int(stmt, 2);
+        int sPort = sqlite3_column_int(stmt, 3);
+        int dPort = sqlite3_column_int(stmt, 4);
+        auto rule = std::make_shared<L4SimpleRule>(permit,limitCount,sPort,dPort);
+        results.push_back(std::make_shared<FilterRule>(rule,ID));
+    }
+
+    sqlite3_finalize(stmt);
+    
+    return results;
+}
 
 std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findL2RuleByAction(bool permit_) {
     std::vector<std::shared_ptr<FilterRule>> results;
@@ -130,6 +158,9 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findRulesByProperties
     if(selectRule->layer == "L3") {
         results = this->findL3RuleByAction(selectRule->permit);
     }
+    if(selectRule->layer == "L4Simple") {
+        results = this->findL4SimpleRuleByAction(selectRule->permit);
+    }
     return results;
 
 }
@@ -178,7 +209,31 @@ void FilterRuleLogger::log(std::shared_ptr<FilterRule> rule) {
     if(auto l3rule = std::dynamic_pointer_cast<L3Rule>(currentRule)) {
         this->insertL3Rule(rule);
     }
+    if(auto l4Simple = std::dynamic_pointer_cast<L4SimpleRule>(currentRule)) {
+        this->insertL4SimpleRule(rule);
+    }
 
+}
+
+
+void FilterRuleLogger::insertL4SimpleRule(std::shared_ptr<FilterRule> rule) {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "INSERT INTO l4Simple_rules (id,permit,limit_count,source_port,dest_port) VALUES (?,?, ?, ?,?);";
+    if(sqlite3_prepare_v2(this->db, sql, -1,&stmt,nullptr) != SQLITE_OK) {
+        throw std::runtime_error("Error while inserting into L3RULES\n");
+    }
+    auto l4Simple = std::dynamic_pointer_cast<L4SimpleRule>(rule->getRule());
+    sqlite3_bind_int(stmt,1,rule->getID());
+    sqlite3_bind_int(stmt, 2, l4Simple->permit ? 1 : 0);
+    sqlite3_bind_int(stmt, 3, l4Simple->limitCount);
+    sqlite3_bind_int(stmt, 4, l4Simple->sPort);
+    sqlite3_bind_int(stmt, 5, l4Simple->dPort);
+
+    if(sqlite3_step(stmt) != SQLITE_DONE) {
+        std::runtime_error("Could not finish l4Simple rule insert statement\n");
+    }
+    std::cout << "New L4Simple rule saved into DB " << std::endl;
+    sqlite3_finalize(stmt);
 }
 
 
@@ -232,6 +287,32 @@ void FilterRuleLogger::insertL2Rule(std::shared_ptr<FilterRule> rule) {
     } 
     std::cout << "New L2 rule saved into DB " << std::endl;
     sqlite3_finalize(stmt);
+}
+
+
+std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectL4SimpleRules() {
+    std::vector<std::shared_ptr<FilterRule>> rules;
+    sqlite3_stmt* stmt;
+    const char* sql = "SELECT id,permit,limit_count,source_port,dest_port FROM l4Simple_rules;";
+
+    if (sqlite3_prepare_v2(this->db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        std::runtime_error("Error while preparing sql select for l3 rules\n");
+    }
+
+     while (sqlite3_step(stmt) == SQLITE_ROW) {
+        int ID = sqlite3_column_int(stmt, 0);
+        bool permit = sqlite3_column_int(stmt, 1) != 0;
+        int limitCount = sqlite3_column_int(stmt, 2);
+        int sPort =  sqlite3_column_int(stmt, 3);
+        int dPort =  sqlite3_column_int(stmt, 4);
+        auto rule = std::make_shared<L4SimpleRule>(
+            permit, limitCount,sPort,dPort);
+        auto filterRule = std::make_shared<FilterRule>(rule,ID);
+        rules.push_back(filterRule);
+    }
+    
+    sqlite3_finalize(stmt);
+    return rules;
 }
 
 
@@ -297,9 +378,10 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectL2Rules() {
 std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectAllRules() {
     auto l2rules = this->selectL2Rules();
     auto l3rules = this->selectL3Rules();
-
-    std::vector<std::shared_ptr<FilterRule>> allRules(l2rules);
+    auto l4SimpleRules = this->selectL4SimpleRules();
+    std::vector<std::shared_ptr<FilterRule>> allRules;
     allRules.insert(allRules.end(), l2rules.begin(), l2rules.end());
     allRules.insert(allRules.end(), l3rules.begin(), l3rules.end());
+    allRules.insert(allRules.end(), l4SimpleRules.begin(), l4SimpleRules.end());
     return allRules;
 }

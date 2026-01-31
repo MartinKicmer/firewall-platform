@@ -35,7 +35,17 @@ bool RuleComparer::compare(std::shared_ptr<Rule> rule) const {
         if(sourceMatch && destMatch) {
             return l3rule->permit;
         }
+    }
+    if(auto l4RuleSimple = std::dynamic_pointer_cast<L4SimpleRule>(rule)) {
+        auto udpDatagram = this->parser->getUDPDatagram();
+        if(!udpDatagram) return true;
 
+        bool sourcePortMatch = (l4RuleSimple->sPort == -1 || l4RuleSimple->sPort == udpDatagram->getSourcePort() );
+        bool destPortMatch = (l4RuleSimple->dPort == -1 || l4RuleSimple->dPort == udpDatagram->getDestPort());
+
+        if(sourcePortMatch && destPortMatch) {
+            return l4RuleSimple->permit;
+        }
     }
     return true;
 }

@@ -104,7 +104,20 @@ std::shared_ptr<RemoveRule> CLIParser::parseRemoveRule() {
     return std::make_shared<RemoveRule>(ID,fromMemory,layer);
 }
 
+std::shared_ptr<L4SimpleRule> CLIParser::parseSimpleL4Rule() {
+    std::string layer = this->parseLayer();
+    int limitCount = -1;
+    bool permit = this->parseAction();
+    int sPort = -1;
+    int dPort = -1;
 
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if(!std::strcmp(this->argv[i],"-sport")) sPort = std::atoi(this->argv[i+1]);
+        if(!std::strcmp(this->argv[i],"-dport")) dPort = std::atoi(this->argv[i+1]);
+    }
+
+    return std::make_shared<L4SimpleRule>(permit,limitCount,sPort,dPort);
+}
 std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
     if(this->contains("redirect")) {
         auto rule = this->parseRedirectRule();        
@@ -133,6 +146,12 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
     if(layer == "L3") {
         auto rule = this->parseL3Rule();
         filterRule = std::make_shared<FilterRule>(rule,RID,save);
+        return filterRule;
+    }
+    
+    if(layer == "L4Simple") {
+        auto rule = this->parseSimpleL4Rule();
+        filterRule = std::make_shared<FilterRule>(rule,RID);
         return filterRule;
     }
 

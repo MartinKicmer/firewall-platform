@@ -16,6 +16,10 @@ std::shared_ptr<FilterRule> FilterRuleList::checkAllRules() {
     return nullptr;
 }
 
+void FilterRuleList::removeRule(std::shared_ptr<FilterRule> filterRule) {
+    this->filterRules.erase(filterRule->getID());
+}
+
 void FilterRuleList::printFilterRuleInfo(std::shared_ptr<FilterRule> rule) {
     if(auto derived = std::dynamic_pointer_cast<L2Rule>(rule->getRule())) {
         std::cout << "L2 Layer rule\n------------------\n";
@@ -24,5 +28,8 @@ void FilterRuleList::printFilterRuleInfo(std::shared_ptr<FilterRule> rule) {
     }
     if(auto l3rule = std::dynamic_pointer_cast<L3Rule>(rule->getRule())) {
         std::cout << *l3rule << std::endl;
+    } 
+    if(auto l4Simple = std::dynamic_pointer_cast<L4SimpleRule>(rule->getRule())) {
+        std::cout << *l4Simple << std::endl;
     } 
 }
