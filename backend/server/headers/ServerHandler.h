@@ -6,15 +6,17 @@
 #include <pistache/endpoint.h>
 #include "PacketBlockerGateway.h"
 #include "RequestTypes.h"
+#include "WebSocketService.h"
 class ServerHandler : public Pistache::Http::Handler {
 public:
 
     std::shared_ptr<Pistache::Tcp::Handler> clone() const override {
-        return std::make_shared<ServerHandler>();
+        return std::make_shared<ServerHandler>(this->wsService,this->packetBlockerGateway);
     }
-    ServerHandler() {
+   ServerHandler(std::shared_ptr<WebSocketService> ws_,std::shared_ptr<PacketBlockerGateway> packetBlockerGateway_) 
+        : wsService(ws_) {
         this->setupRestRoutes();
-        this->packetBlockerGateway = std::make_unique<PacketBlockerGateway>("../../firewall/packet-blocker/build/packet-blocker");
+        this->packetBlockerGateway = packetBlockerGateway_;
     }
     void onRequest(const Pistache::Http::Request& request, Pistache::Http::ResponseWriter response) override;
     void setupRestRoutes();
@@ -33,5 +35,6 @@ public:
 
 private:
     Pistache::Rest::Router router;
-    std::unique_ptr<PacketBlockerGateway> packetBlockerGateway;
+    std::shared_ptr<PacketBlockerGateway> packetBlockerGateway = nullptr;
+    std::shared_ptr<WebSocketService> wsService = nullptr;
 };

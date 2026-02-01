@@ -1873,4 +1873,33 @@ CMakeFiles/server.dir/src/main.cpp.o: \
  /usr/include/nlohmann/ordered_map.hpp \
  /usr/include/nlohmann/detail/macro_unscope.hpp \
  /usr/include/nlohmann/thirdparty/hedley/hedley_undef.hpp \
- /home/andrew/firewall-platform/backend/server/src/../headers/RequestTypes.h
+ /home/andrew/firewall-platform/backend/server/src/../headers/RequestTypes.h \
+ /home/andrew/firewall-platform/backend/server/src/../headers/WebSocketService.h \
+ /usr/local/include/ixwebsocket/IXWebSocketServer.h \
+ /usr/local/include/ixwebsocket/IXSocketServer.h \
+ /usr/local/include/ixwebsocket/IXConnectionState.h \
+ /usr/local/include/ixwebsocket/IXNetSystem.h /usr/include/netinet/ip.h \
+ /usr/local/include/ixwebsocket/IXSelectInterrupt.h \
+ /usr/local/include/ixwebsocket/IXSocketTLSOptions.h \
+ /usr/include/c++/13/set /usr/include/c++/13/bits/stl_set.h \
+ /usr/include/c++/13/bits/stl_multiset.h \
+ /usr/local/include/ixwebsocket/IXWebSocket.h \
+ /usr/local/include/ixwebsocket/IXProgressCallback.h \
+ /usr/local/include/ixwebsocket/IXWebSocketCloseConstants.h \
+ /usr/local/include/ixwebsocket/IXWebSocketErrorInfo.h \
+ /usr/local/include/ixwebsocket/IXWebSocketHttpHeaders.h \
+ /usr/local/include/ixwebsocket/IXCancellationRequest.h \
+ /usr/local/include/ixwebsocket/IXStrCaseCompare.h \
+ /usr/local/include/ixwebsocket/IXWebSocketMessage.h \
+ /usr/local/include/ixwebsocket/IXWebSocketCloseInfo.h \
+ /usr/local/include/ixwebsocket/IXWebSocketMessageType.h \
+ /usr/local/include/ixwebsocket/IXWebSocketOpenInfo.h \
+ /usr/local/include/ixwebsocket/IXWebSocketPerMessageDeflateOptions.h \
+ /usr/local/include/ixwebsocket/IXWebSocketSendData.h \
+ /usr/local/include/ixwebsocket/IXWebSocketSendInfo.h \
+ /usr/local/include/ixwebsocket/IXWebSocketTransport.h \
+ /usr/local/include/ixwebsocket/IXWebSocketHandshake.h \
+ /usr/local/include/ixwebsocket/IXHttp.h \
+ /usr/local/include/ixwebsocket/IXSocket.h \
+ /usr/local/include/ixwebsocket/IXWebSocketInitResult.h \
+ /usr/local/include/ixwebsocket/IXWebSocketPerMessageDeflate.h

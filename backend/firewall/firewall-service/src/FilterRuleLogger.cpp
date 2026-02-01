@@ -268,6 +268,63 @@ void FilterRuleLogger::insertL3Rule(std::shared_ptr<FilterRule> rule) {
 }
 
 
+void FilterRuleLogger::updateRule(std::shared_ptr<FilterRule> rule) {
+    sqlite3_stmt* stmt = nullptr;
+    std::string sql;
+    auto currentRule = rule->getRule();
+
+    if (auto l2 = std::dynamic_pointer_cast<L2Rule>(currentRule)) {
+        sql = "UPDATE l2_rules SET permit = ?, limit_count = ?, source_mac = ?, dest_mac = ? WHERE id = ?;";
+        if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) throw std::runtime_error("Could not prepare UPDATE\n");
+        
+        sqlite3_bind_int(stmt, 1, l2->permit ? 1 : 0);
+        sqlite3_bind_int(stmt, 2, l2->limitCount);
+        sqlite3_bind_text(stmt, 3, l2->source.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 4, l2->dest.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 5, rule->getID());
+    }
+    else if (auto l3 = std::dynamic_pointer_cast<L3Rule>(currentRule)) {
+        sql = "UPDATE l3_rules SET permit = ?, limit_count = ?, source_ip = ?, source_prefix = ?, "
+              "dest_ip = ?, dest_prefix = ?, ttl_max = ?, ttl_min = ?, protocol = ?, tos = ?, "
+              "allow_fragments = ? WHERE id = ?;";
+        if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return;
+
+        const auto& [srcIp, srcPref] = l3->source;
+        const auto& [dstIp, dstPref] = l3->dest;
+
+        sqlite3_bind_int(stmt, 1, l3->permit ? 1 : 0);
+        sqlite3_bind_int(stmt, 2, l3->limitCount);
+        sqlite3_bind_text(stmt, 3, srcIp.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 4, srcPref);
+        sqlite3_bind_text(stmt, 5, dstIp.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 6, dstPref);
+        sqlite3_bind_int(stmt, 7, l3->ttlMax);
+        sqlite3_bind_int(stmt, 8, l3->ttlMin);
+        sqlite3_bind_int(stmt, 9, l3->protocol);
+        sqlite3_bind_int(stmt, 10, l3->tos);
+        sqlite3_bind_int(stmt, 11, l3->allowFragments ? 1 : 0);
+        sqlite3_bind_int(stmt, 12, rule->getID());
+    }
+    else if (auto l4 = std::dynamic_pointer_cast<L4SimpleRule>(currentRule)) {
+        sql = "UPDATE l4Simple_rules SET permit = ?, limit_count = ?, source_port = ?, dest_port = ? WHERE id = ?;";
+        if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return;
+
+        sqlite3_bind_int(stmt, 1, l4->permit ? 1 : 0);
+        sqlite3_bind_int(stmt, 2, l4->limitCount);
+        sqlite3_bind_int(stmt, 3, l4->sPort);
+        sqlite3_bind_int(stmt, 4, l4->dPort);
+        sqlite3_bind_int(stmt, 5, rule->getID());
+    }
+    if (stmt) {
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            std::cerr << "Update failed: " << sqlite3_errmsg(this->db) << std::endl;
+        } else {
+            std::cout << "Rule ID " << rule->getID() << " successfully updated." << std::endl;
+        }
+        sqlite3_finalize(stmt);
+    }
+}
+
 void FilterRuleLogger::insertL2Rule(std::shared_ptr<FilterRule> rule) {
     sqlite3_stmt* stmt = nullptr;
     const char* sql = "INSERT INTO l2_rules (id,permit, limit_count, source_mac, dest_mac) VALUES (?,?, ?, ?, ?);";

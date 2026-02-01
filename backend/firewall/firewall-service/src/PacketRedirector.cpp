@@ -12,17 +12,18 @@ void PacketRedirector::redirectPacket(std::shared_ptr<PacketParser> parser) {
         auto frame = parser->getEthernetFrame();
         if(frame) {
             connector.sendData(frame->serialize().dump());
-            redirectRule->count--;
         }
     }
     if(redirectRule->layer == "L3") {
         auto iPv4Datagram = parser->getIPv4Datagram();
         if(iPv4Datagram) {
             connector.sendData(iPv4Datagram->serialize().dump());
-            redirectRule->count--;
         }
+    
     }
-    if(redirectRule->count <= 0) {
+    if(redirectRule->count != -1) redirectRule->count--;
+
+    if(redirectRule->count == 0) {
         connector.sendData("end");
         this->redirect = false;
         this->rule = nullptr;

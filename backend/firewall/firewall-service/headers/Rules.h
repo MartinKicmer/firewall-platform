@@ -4,18 +4,20 @@
 #include <iostream>
 
 struct Rule {
+    bool update = false;
     bool permit;
     int limitCount;
     virtual ~Rule() = default;
     Rule() : permit(true),limitCount(-1) {}
     Rule(bool permit_,bool limitCount_) : permit(permit_),limitCount(limitCount_) {}
+    Rule(bool permit_,bool limitCount_,bool update_) : permit(permit_),limitCount(limitCount_),update(update_) {}
 };
 
 struct L2Rule : public Rule {
     std::string source;
     std::string dest;
     L2Rule(bool permit_,int limitCount_,const std::string& source_,const std::string& dest_) : Rule(permit_,limitCount_), source(source_),dest(dest_) {}
-
+    L2Rule(bool permit_,int limitCount_,const std::string& source_,const std::string& dest_,bool update_) : Rule(permit_,limitCount_,update_), source(source_),dest(dest_) {}
     friend std::ostream& operator<<(std::ostream& o, const L2Rule& rule) {
         std::cout << "L2 RULE\n---------\n";
         std::cout << "ACTION: " << (rule.permit ? "permit" : "deny") << "\n";
@@ -30,12 +32,12 @@ struct L2Rule : public Rule {
 struct L3Rule : public Rule {
     std::tuple<std::string,int> source;
     std::tuple<std::string,int> dest;
-    int ttlMax;
-    int ttlMin;
+    int ttlMax = -1;
+    int ttlMin = -1;
 
-    int protocol;
-    int tos;
-    bool allowFragments;
+    int protocol = -1;
+    int tos = -1;
+    bool allowFragments = false;
 
     L3Rule(bool permit_,
         int limitCount_,
@@ -47,6 +49,21 @@ struct L3Rule : public Rule {
         int tos_ = -1,
         bool allowFrags_ = true) :
     Rule(permit_, limitCount_), 
+    source(source_), dest(dest_), 
+    ttlMax(ttlMax_), ttlMin(ttlMin_), 
+    protocol(protocol_), tos(tos_), 
+    allowFragments(allowFrags_) {}
+
+    L3Rule(bool permit_,
+        int limitCount_,
+        const std::tuple<std::string,int>& source_,
+        const std::tuple<std::string,int>& dest_,
+        int ttlMax_, 
+        int ttlMin_,
+        int protocol_,
+        int tos_,
+        bool allowFrags_,bool update_) :
+    Rule(permit_, limitCount_,update_), 
     source(source_), dest(dest_), 
     ttlMax(ttlMax_), ttlMin(ttlMin_), 
     protocol(protocol_), tos(tos_), 
@@ -74,9 +91,9 @@ struct L3Rule : public Rule {
 struct L4SimpleRule : Rule {
     L4SimpleRule(bool permit_,
         int limitCount_,int sPort_,int dPort_) : Rule(permit_,limitCount_) , sPort(sPort_),dPort(dPort_) {}
-    int sPort;
-    int dPort;
 
+    L4SimpleRule(bool permit_,
+        int limitCount_,int sPort_,int dPort_,bool update_) : Rule(permit_,limitCount_,update_) , sPort(sPort_),dPort(dPort_) {}
     friend std::ostream& operator<<(std::ostream& o, const L4SimpleRule& rule) {
         std::cout << "L4Simple RULE\n---------\n";
         std::cout << "ACTION: " << (rule.permit ? "permit" : "deny") << "\n";
@@ -85,6 +102,9 @@ struct L4SimpleRule : Rule {
         std::cout << "DEST PORT: " << rule.dPort << "\n";
         return o;
     }
+    int sPort;
+    int dPort;
+
 };
 
 struct RemoveRule : public Rule {

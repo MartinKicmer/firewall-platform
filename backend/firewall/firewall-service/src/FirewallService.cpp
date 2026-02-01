@@ -138,6 +138,9 @@ void FirewallService::writePacketBlockerData(const std::string& data) {
         this->packetBlockerGateway->sendSelectedRules(deserializedRule);
         return;
     }
-
+    if(deserializedRule->canUpdate()) {
+          auto logger = FilterRuleLogger::getInstance();
+          logger.updateRule(deserializedRule);
+    }
     this->filterList->addRule(deserializedRule);
 }

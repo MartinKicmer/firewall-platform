@@ -153,17 +153,18 @@ void ServerHandler::createRule(const Pistache::Rest::Request& request, Pistache:
 }
 
 void ServerHandler::getLastPDUs(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
-    bool permit = request.param(":action").as<bool>();
-    auto query = request.query();
-    if(!query.has("count") || !query.has("layer")) response.send(Pistache::Http::Code::Bad_Request);
+    try {
+        bool permit = request.param(":action").as<bool>();
+        auto query = request.query();
+        if(!query.has("count") || !query.has("layer")) response.send(Pistache::Http::Code::Bad_Request);
 
-    int count = std::stoi(query.get("count").value());
-    std::string layer = query.get("layer").value();
-    
-    auto jsonArr = this->packetBlockerGateway->getLastPDUS(count,layer,permit);
-
-    response.headers().add<Pistache::Http::Header::ContentType>(MIME(Application, Json));
-    response.send(Pistache::Http::Code::Ok, jsonArr.dump());
+        int count = std::stoi(query.get("count").value());
+        std::string layer = query.get("layer").value();
         
-      
+        this->packetBlockerGateway->setStreamParams(layer,permit);
+        response.send(Pistache::Http::Code::Ok);
+    } catch (const std::exception& e) {
+        response.send(Pistache::Http::Code::Internal_Server_Error);
+        std::exit(EXIT_FAILURE);
+    } 
 }

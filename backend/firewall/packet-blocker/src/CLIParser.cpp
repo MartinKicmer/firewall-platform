@@ -54,9 +54,9 @@ std::shared_ptr<L2Rule> CLIParser::parseL2Rule() {
             dmac = this->argv[i + 1];
         } 
     }
-
+    bool update = this->contains("update");
     bool permit = this->parseAction();
-    return std::make_shared<L2Rule>(permit, -1, smac, dmac);
+    return std::make_shared<L2Rule>(permit, -1, smac, dmac,update);
 }
 
 std::tuple<int,int,bool> CLIParser::parseIPINFO() {
@@ -81,10 +81,13 @@ std::tuple<int,int,bool> CLIParser::parseIPINFO() {
 
 std::shared_ptr<RedirectRule> CLIParser::parseRedirectRule() {
     bool permit = this->parseAction();
-    int count = -1;
+    int count = -2;
     std::string layer = this->parseLayer();
     for(int i = 0; i < this->argc - 1; ++i) {
         if(!std::strcmp(this->argv[i],"redirect")) {
+            if(!std::strcmp(this->argv[i+1],"all")) {
+                count = -1;
+            }
             count = std::atoi(this->argv[i+1]);
         }
     }
@@ -110,13 +113,13 @@ std::shared_ptr<L4SimpleRule> CLIParser::parseSimpleL4Rule() {
     bool permit = this->parseAction();
     int sPort = -1;
     int dPort = -1;
-
+    bool update = this->contains("update");
     for(int i = 0; i < this->argc - 1; ++i) {
         if(!std::strcmp(this->argv[i],"-sport")) sPort = std::atoi(this->argv[i+1]);
         if(!std::strcmp(this->argv[i],"-dport")) dPort = std::atoi(this->argv[i+1]);
     }
 
-    return std::make_shared<L4SimpleRule>(permit,limitCount,sPort,dPort);
+    return std::make_shared<L4SimpleRule>(permit,limitCount,sPort,dPort,update);
 }
 std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
     if(this->contains("redirect")) {
@@ -151,7 +154,7 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
     
     if(layer == "L4Simple") {
         auto rule = this->parseSimpleL4Rule();
-        filterRule = std::make_shared<FilterRule>(rule,RID);
+        filterRule = std::make_shared<FilterRule>(rule,RID,save);
         return filterRule;
     }
 
@@ -219,6 +222,7 @@ std::shared_ptr<L3Rule> CLIParser::parseL3Rule() {
             ttlMin = std::atoi(this->argv[i+1]);
         }
     }
-    return std::make_shared<L3Rule>(permit, -1, sourceA, destA,ttlMax,ttlMin,protocol,TOS,allowFrags);
+    bool update = this->contains("update");
+    return std::make_shared<L3Rule>(permit, -1, sourceA, destA,ttlMax,ttlMin,protocol,TOS,allowFrags,update);
 
 }

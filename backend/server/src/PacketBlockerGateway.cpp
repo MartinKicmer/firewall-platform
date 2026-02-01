@@ -2,8 +2,43 @@
 #include <boost/process/detail/child_decl.hpp>
 #include <cstdlib>
 #include <exception>
+#include <memory>
 #include <stdexcept>
 #include <string>
+void PacketBlockerGateway::printRedirectedPackets(std::shared_ptr<WebSocketService> wsService) {
+    while (true) {
+        boost::process::ipstream outStream;
+        try {
+            std::string currentLayer;
+            bool currentPermit;
+            {
+                std::lock_guard<std::mutex> lock(params.mtx);
+                currentLayer = params.layer;
+                currentPermit = params.permit;
+            }
+
+            this->prActive = std::make_unique<boost::process::child>(
+                this->processPath,
+                "-l", currentLayer.c_str(),
+                "-action", currentPermit ? "permit" : "deny",
+                "redirect", "all",
+                boost::process::std_out > outStream
+            );
+
+            std::string line;
+            while (std::getline(outStream, line)) {
+                if (line.empty()) continue;
+                wsService->broadcastMSG(line);
+            }
+
+            this->prActive->wait();
+
+        } catch (const std::exception& e) {
+            std::cerr << "Error in stream loop: " << e.what() << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+    }
+}
 
 nlohmann::json PacketBlockerGateway::getLastPDUS(int count,const std::string& layer,bool permit) {
     boost::process::ipstream outStream;
@@ -11,7 +46,7 @@ nlohmann::json PacketBlockerGateway::getLastPDUS(int count,const std::string& la
     nlohmann::json jsonArr = nlohmann::json::array();
     try {
         boost::process::child pr(this->processPath,
-            "-l",layer.c_str(),"-action",permit ? "permit" : "deny","redirect",std::to_string(count),boost::process::std_out > outStream);
+            "-l",layer.c_str(),"-action",permit ? "permit" : "deny","redirect",count != -1 ? std::to_string(count) : "all",boost::process::std_out > outStream);
 
         std::string line;
         while (std::getline(outStream, line)) {

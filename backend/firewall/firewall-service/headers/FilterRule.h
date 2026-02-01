@@ -15,6 +15,7 @@ public:
     : rule(rule_),ID(ID_),save(save_) {}
     bool canPass();
     bool canSave() const { return this->save; }
+    bool canUpdate() const { return this->rule->update; }
     void changeSave(bool s) { this->save = s;  }
     void setComparer(std::shared_ptr<RuleComparer> comparer_) { this->ruleComparer = comparer_; }
     std::shared_ptr<Rule> getRule() { return this->rule; }

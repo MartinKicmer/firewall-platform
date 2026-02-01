@@ -177,6 +177,30 @@ src/ServerHandler.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/ServerHandler.cpp.s
 .PHONY : src/ServerHandler.cpp.s
 
+src/WebSocketService.o: src/WebSocketService.cpp.o
+.PHONY : src/WebSocketService.o
+
+# target to build an object file
+src/WebSocketService.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/WebSocketService.cpp.o
+.PHONY : src/WebSocketService.cpp.o
+
+src/WebSocketService.i: src/WebSocketService.cpp.i
+.PHONY : src/WebSocketService.i
+
+# target to preprocess a source file
+src/WebSocketService.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/WebSocketService.cpp.i
+.PHONY : src/WebSocketService.cpp.i
+
+src/WebSocketService.s: src/WebSocketService.cpp.s
+.PHONY : src/WebSocketService.s
+
+# target to generate assembly for a file
+src/WebSocketService.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/src/WebSocketService.cpp.s
+.PHONY : src/WebSocketService.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -216,6 +240,9 @@ help:
 	@echo "... src/ServerHandler.o"
 	@echo "... src/ServerHandler.i"
 	@echo "... src/ServerHandler.s"
+	@echo "... src/WebSocketService.o"
+	@echo "... src/WebSocketService.i"
+	@echo "... src/WebSocketService.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

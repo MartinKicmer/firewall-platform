@@ -37,6 +37,7 @@ std::string FilterRule::serializeToJSON()  {
         return j.dump();
     }
     j["save"] = this->save;
+    j["update"] = this->rule->update;
     if (auto l2 = std::dynamic_pointer_cast<L2Rule>(this->rule)) {
         j["ruleType"] = "L2";
         j["data"] = {
@@ -103,12 +104,14 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
     if(j.contains("save")) {
         save = j["save"];
     }
+
     if (j["ruleType"] == "L2") {
         rule = std::make_shared<L2Rule>(
             j["data"]["permit"],
             j["data"]["limitCount"],
             j["data"]["source"],
-            j["data"]["dest"]
+            j["data"]["dest"],
+            j["update"]
         );
     }
 
@@ -120,7 +123,7 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
         rule = std::make_shared<L4SimpleRule>(j["data"]["permit"],
             j["data"]["limitCount"],
             j["data"]["sourcePort"],
-            j["data"]["destPort"]);
+            j["data"]["destPort"],j["update"]);
     }
     return std::make_shared<FilterRule>(rule, id,save);
 }
@@ -135,7 +138,8 @@ std::shared_ptr<L3Rule> FilterRule::deserializeL3Rule(const nlohmann::json& j) {
         j["data"]["minTTL"],
         j["data"]["protocol"],
         j["data"]["TOS"],
-        j["data"]["allowFrag"]
+        j["data"]["allowFrag"],
+        j["update"]
     );
     return l3rule;
 }
