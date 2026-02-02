@@ -19,7 +19,12 @@ void PacketRedirector::redirectPacket(std::shared_ptr<PacketParser> parser) {
         if(iPv4Datagram) {
             connector.sendData(iPv4Datagram->serialize().dump());
         }
-    
+    }
+    if(redirectRule->layer == "L4Simple") {
+        auto udp = parser->getUDPDatagram();
+        if(udp) {
+            connector.sendData(udp->serialize().dump());
+        }
     }
     if(redirectRule->count != -1) redirectRule->count--;
 

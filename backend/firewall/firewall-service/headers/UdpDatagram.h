@@ -7,6 +7,7 @@
 #include <iostream>
 #include <netinet/ip.h>    
 #include <arpa/inet.h>  
+#include <nlohmann/json.hpp>
 class UdpDatagram : public AbstractPDU {
 public:
     UdpDatagram(
@@ -29,6 +30,8 @@ public:
         std::cout << "CHECKSUM: " << u.getChecksum() << std::endl;
         return o;
     }
+
+    nlohmann::json serialize() const;
 private:
     uint16_t sPort;
     uint16_t dPort;

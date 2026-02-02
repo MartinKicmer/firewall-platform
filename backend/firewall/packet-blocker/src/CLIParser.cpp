@@ -213,7 +213,7 @@ std::shared_ptr<L3Rule> CLIParser::parseL3Rule() {
             this->parseIP(sourceA, this->argv[i+1]);
         }
         if(!std::strcmp(this->argv[i],"-da")) {
-            this->parseIP(sourceA, this->argv[i+1]);
+            this->parseIP(destA, this->argv[i+1]);
         }
         if(!std::strcmp(this->argv[i],"-ttlMax")) {
             ttlMax = std::atoi(this->argv[i+1]);

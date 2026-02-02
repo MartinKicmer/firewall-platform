@@ -4,7 +4,15 @@
 #include <netinet/udp.h>
 #include <stdexcept>
 
-
+nlohmann::json UdpDatagram::serialize() const {
+    return nlohmann::json{
+            {"type", "UDP Datagram"},
+            {"len", this->len},
+            {"checksum", this->checksum},
+            {"srcPort", this->sPort},
+            {"destPort", this->dPort}
+        };
+}
 
 void UdpDatagram::parse() {
     if(this->payload.size() <= 0) throw std::runtime_error("Cant parse UDP packet because of not enough size\n");

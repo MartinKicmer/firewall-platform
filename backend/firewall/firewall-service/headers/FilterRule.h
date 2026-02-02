@@ -24,6 +24,10 @@ public:
     [[nodiscard]] std::string serializeToJSON();
 
     static std::shared_ptr<FilterRule> deserialize(const std::string& jsonData);
+
+    void printRule();
+
+
 private:
     std::shared_ptr<Rule> rule;
     int ID;

@@ -143,3 +143,20 @@ std::shared_ptr<L3Rule> FilterRule::deserializeL3Rule(const nlohmann::json& j) {
     );
     return l3rule;
 }
+
+
+void FilterRule::printRule() {
+
+    std::cout << "FILTER RULE: \n------" << std::endl;
+    std::cout << "ID: " << this->ID << std::endl;
+    if(auto l2rule = std::dynamic_pointer_cast<L2Rule>(this->rule)){
+        std::cout << *l2rule << std::endl;
+    }
+    if(auto l3rule = std::dynamic_pointer_cast<L3Rule>(this->rule)){
+        std::cout << *l3rule << std::endl;
+    }
+     if(auto l4Simple = std::dynamic_pointer_cast<L4SimpleRule>(this->rule)){
+        std::cout << *l4Simple << std::endl;
+    }
+
+}

@@ -6,7 +6,7 @@ void FirewallService::loadSavedRules() {
     auto logger = FilterRuleLogger::getInstance();
     auto rules = logger.selectAllRules();
     for(auto rule : rules) {
-        std::cout << rule->getRule() << std::endl;
+        rule->printRule();
         this->filterList->addRule(rule);
     }
 }
@@ -23,6 +23,8 @@ void FirewallService::run(const std::string& standardPath) {
         
         auto packetParser = std::make_shared<PacketParser>(data);
         this->filterList->setParser(packetParser);
+        packetParser->printL2Layer(PacketParser::PduType::ETHERNETFRAME);
+        packetParser->printL3Layer(PacketParser::PduType::IPV4DATAGRAM);
         packetParser->printL4Layer(PacketParser::PduType::UDPDATAGRAM);
         auto blockingRule = this->filterList->checkAllRules();
         if(blockingRule != nullptr) {

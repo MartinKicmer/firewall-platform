@@ -15,10 +15,12 @@ void WebSocketService::broadcastMSG(const std::string& msg) {
 
     auto clients = this->srv->getClients();
     if (clients.empty()) {
+        std::cout << "NO Websocket clients" << std::endl;
         return; 
     }
 
     for(const auto& cl : clients) {
+        std::cout << "Broadcasted msg: " << msg << std::endl;
         cl->send(msg);
     }
 }

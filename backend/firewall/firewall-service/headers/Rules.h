@@ -6,7 +6,7 @@
 struct Rule {
     bool update = false;
     bool permit;
-    int limitCount;
+    int limitCount = -1;
     virtual ~Rule() = default;
     Rule() : permit(true),limitCount(-1) {}
     Rule(bool permit_,bool limitCount_) : permit(permit_),limitCount(limitCount_) {}
