@@ -23,13 +23,16 @@ private:
     void insertL2Rule(std::shared_ptr<FilterRule> l2rule);
     void insertL3Rule(std::shared_ptr<FilterRule> l2rule);
     void insertL4SimpleRule(std::shared_ptr<FilterRule> l2rule);
+    void insertL4TCPRule(std::shared_ptr<FilterRule> l2rule);
     std::vector<std::shared_ptr<FilterRule>> findL2RuleByAction(bool permit);
     std::vector<std::shared_ptr<FilterRule>> findL3RuleByAction(bool permit);
     std::vector<std::shared_ptr<FilterRule>> findL4SimpleRuleByAction(bool permit);
+    std::vector<std::shared_ptr<FilterRule>> findL4TCPRuleByAction(bool permit);
     void setupTables();
     std::vector<std::shared_ptr<FilterRule>> selectL2Rules();
     std::vector<std::shared_ptr<FilterRule>> selectL3Rules();
     std::vector<std::shared_ptr<FilterRule>> selectL4SimpleRules();
+    std::vector<std::shared_ptr<FilterRule>> selectL4TCPRules();
     sqlite3* db;
     std::string schema;
 };

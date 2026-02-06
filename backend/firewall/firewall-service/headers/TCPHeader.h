@@ -55,8 +55,8 @@ public:
         return o;
     }
 private:
-    uint16_t sPort = 0;
-    uint16_t dPort = 0;
+    short sPort = 0;
+    short dPort = 0;
     uint32_t seqNumber = 0;
     uint32_t ackNumber = 0;
     uint8_t  flags = 0;

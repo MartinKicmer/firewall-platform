@@ -45,7 +45,10 @@ public:
 
     [[nodiscard]] std::shared_ptr<UdpDatagram> getUDPDatagram() {
         return std::static_pointer_cast<UdpDatagram>(this->pdus[PduType::UDPDATAGRAM]);
-    } 
+    }
+    [[nodiscard]] std::shared_ptr<TCPHeader> getTCPPACKET() {
+        return std::static_pointer_cast<TCPHeader>(this->pdus[PduType::TCPPACKET]);
+    }  
     
 private:
     std::unordered_map<int,std::shared_ptr<AbstractPDU>> pdus;

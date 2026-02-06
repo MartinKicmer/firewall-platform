@@ -110,11 +110,11 @@ struct L4SimpleRule : Rule {
 
 struct L4TcpRule : public L4SimpleRule {
     uint8_t flags;
-    uint16_t minWindow;
-    uint16_t maxWindow;
+    short minWindow;
+    short maxWindow;
 
-    L4TcpRule(bool permit_, int limitCount_, uint16_t sPort_, uint16_t dPort_, 
-              uint8_t flags_ = 0, uint16_t minW = 0, uint16_t maxW = 65535) 
+    L4TcpRule(bool permit_, int limitCount_, int sPort_, int dPort_, 
+              uint8_t flags_ = 0, short minW = -1, short maxW = -1) 
         : L4SimpleRule(permit_, limitCount_, sPort_, dPort_), 
           flags(flags_), minWindow(minW), maxWindow(maxW) {}
 };

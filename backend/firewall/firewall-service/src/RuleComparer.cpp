@@ -1,4 +1,5 @@
 #include "../headers/RuleComparer.h"
+#include <netinet/tcp.h>
 
 bool RuleComparer::matchIP(const std::string& targetIP, const std::tuple<std::string,int>& ipWithPrefix) const {
     const auto& [ruleIP, prefix] = ipWithPrefix;
@@ -38,6 +39,21 @@ bool RuleComparer::compare(std::shared_ptr<Rule> rule) const {
         bool ttlMatch = ((l3rule->ttlMin == -1 || l3rule->ttlMax == -1 ) || (datagram->getTTL() >= l3rule->ttlMin && datagram->getTTL() <= l3rule->ttlMax) );
         if(sourceMatch && destMatch && protoMatch && tosMatch && ttlMatch) {
             return l3rule->permit;
+        }
+    }
+    if(auto l4tcp = std::dynamic_pointer_cast<L4TcpRule>(rule)) {
+        auto tcp = this->parser->getTCPPACKET();
+        if(!tcp) return true;
+
+        bool sourcePortMatch = (l4tcp->sPort == -1 || l4tcp->sPort == tcp->getSourcePort() );
+        bool destPortMatch = (l4tcp->dPort == -1 || l4tcp->dPort == tcp->getDestPort());
+        bool windowSizeMatch = ((l4tcp->minWindow == -1 || l4tcp->maxWindow == -1) || (tcp->getWindowSize() >= l4tcp->minWindow && tcp->getWindowSize() <= l4tcp->maxWindow));
+        bool synMatch = (l4tcp->flags & TH_SYN) == tcp->isSyn();
+        bool ackMatch = (l4tcp->flags & TH_ACK) == tcp->isAck();
+        bool finMatch = (l4tcp->flags & TH_FIN) == tcp->isFin();
+        bool flagsMatch = synMatch || ackMatch || finMatch;
+        if(sourcePortMatch && destPortMatch && windowSizeMatch && flagsMatch) {
+            return l4tcp->permit;
         }
     }
     if(auto l4RuleSimple = std::dynamic_pointer_cast<L4SimpleRule>(rule)) {
