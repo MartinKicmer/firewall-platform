@@ -28,6 +28,8 @@ private:
     std::shared_ptr<L4SimpleRule> parseSimpleL4Rule();
     std::shared_ptr<RemoveRule> parseRemoveRule();
     std::shared_ptr<SelectRule> parseSelectRule();
+    std::shared_ptr<L4TcpRule> parseL4TCPRule();
+
     [[nodiscard]] std::shared_ptr<L2Rule> parseL2Rule();
     [[nodiscard]] std::shared_ptr<L3Rule> parseL3Rule();
     [[nodiscard]] std::shared_ptr<RedirectRule> parseRedirectRule();

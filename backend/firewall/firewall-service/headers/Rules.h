@@ -1,14 +1,21 @@
 #pragma once
+#include "PacketParser.h"
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <iostream>
+#include "RuleComparer.h"
 
 struct Rule {
     bool update = false;
     bool permit;
     int limitCount = -1;
     virtual ~Rule() = default;
+    virtual bool match(std::shared_ptr<PacketParser> parser) {
+        return true;
+    }
+
     Rule() : permit(true),limitCount(-1) {}
     Rule(bool permit_,bool limitCount_) : permit(permit_),limitCount(limitCount_) {}
     Rule(bool permit_,bool limitCount_,bool update_) : permit(permit_),limitCount(limitCount_),update(update_) {}
@@ -27,7 +34,7 @@ struct L2Rule : public Rule {
         std::cout << "LIMIT COUNT: " << rule.limitCount << "\n";
         return o;
     }
-
+    bool match(std::shared_ptr<PacketParser> parser) override;
 };
 
 struct L3Rule : public Rule {
@@ -86,10 +93,13 @@ struct L3Rule : public Rule {
         return o;
     }
 
+
+    bool match(std::shared_ptr<PacketParser> parser) override;
+
 };
 
 
-struct L4SimpleRule : Rule {
+struct L4SimpleRule : public Rule {
     L4SimpleRule(bool permit_,
         int limitCount_,int sPort_,int dPort_) : Rule(permit_,limitCount_) , sPort(sPort_),dPort(dPort_) {}
 
@@ -103,9 +113,9 @@ struct L4SimpleRule : Rule {
         std::cout << "DEST PORT: " << rule.dPort << "\n";
         return o;
     }
+    bool match(std::shared_ptr<PacketParser> parser) override;
     int sPort;
     int dPort;
-
 };
 
 struct L4TcpRule : public L4SimpleRule {
@@ -117,6 +127,9 @@ struct L4TcpRule : public L4SimpleRule {
               uint8_t flags_ = 0, short minW = -1, short maxW = -1) 
         : L4SimpleRule(permit_, limitCount_, sPort_, dPort_), 
           flags(flags_), minWindow(minW), maxWindow(maxW) {}
+
+
+    bool match(std::shared_ptr<PacketParser> parser) override;
 };
 struct RemoveRule : public Rule {
     RemoveRule(int ID_,bool fromMemory_,const std::string& layer_) 

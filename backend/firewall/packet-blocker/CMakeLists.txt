@@ -20,6 +20,8 @@ add_executable(packet-blocker
   ../../firewall-service/src/EthernetFrame.cpp
   ../../firewall-service/src/IPv4Datagram.cpp
   ../../firewall-service/src/UdpDatagram.cpp
+  ../../firewall-service/src/TCPHeader.cpp
+  ../../firewall-service/src/Rules.cpp
   headers/CLIParser.h
   headers/FirewallGateway.h
   ../../firewall-service/headers/MQConnector.h
@@ -30,6 +32,7 @@ add_executable(packet-blocker
   ../../firewall-service/headers/EthernetFrame.h
   ../../firewall-service/headers/IPv4Datagram.h
   ../../firewall-service/headers/UdpDatagram.h
+  ../../firewall-service/headers/TCPHeader.h
   
 )
 

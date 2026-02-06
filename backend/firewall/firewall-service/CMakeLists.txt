@@ -25,6 +25,7 @@ add_executable(firewallService
   src/UdpDatagram.cpp
   src/TCPHeader.cpp
   src/PacketblockerGateway.cpp
+  src/Rules.cpp
   headers/IPv4Datagram.h
   headers/AbstractPDU.h
   headers/RuleComparer.h

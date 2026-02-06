@@ -1,4 +1,5 @@
 #include "../headers/CLIParser.h"
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -226,3 +227,28 @@ std::shared_ptr<L3Rule> CLIParser::parseL3Rule() {
     return std::make_shared<L3Rule>(permit, -1, sourceA, destA,ttlMax,ttlMin,protocol,TOS,allowFrags,update);
 
 }
+
+std::shared_ptr<L4TcpRule> CLIParser::parseL4TCPRule() {
+    int sPort = -1;
+    int dPort = -1;
+    int minWindowsize = -1;
+    int maxWindowsize = -1;
+    uint8_t flags = 0;
+    bool permit = this->parseAction();
+    int ID = this->parseRID();
+    for(int i = 0; i < this->argc - 1; ++i) {
+        if (i + 1 >= this->argc) break;
+        if(!std::strcmp(this->argv[i],"-sport")) sPort = std::atoi(this->argv[i+1]);
+        if(!std::strcmp(this->argv[i],"-dport")) dPort = std::atoi(this->argv[i+1]);
+        if(!std::strcmp(this->argv[i],"-maxWin")) maxWindowsize = std::atoi(this->argv[i+1]);
+        if(!std::strcmp(this->argv[i],"-minWin")) minWindowsize = std::atoi(this->argv[i+1]);
+        if(!std::strcmp(this->argv[i],"-flag")) {
+            if(!std::strcmp(this->argv[i+1],"SYN")) flags = 2;
+            if(!std::strcmp(this->argv[i+1],"ACK")) flags = 16;
+            if(!std::strcmp(this->argv[i+1],"FIN")) flags = 1;
+        }
+    }
+
+    return std::make_shared<L4TcpRule>(permit,-1,sPort,dPort,flags,minWindowsize,maxWindowsize);
+
+}   
