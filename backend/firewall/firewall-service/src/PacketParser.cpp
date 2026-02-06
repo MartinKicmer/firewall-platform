@@ -26,6 +26,9 @@ void PacketParser::printL4Layer(PacketParser::PduType type) {
         if(auto udpDatagram = std::dynamic_pointer_cast<UdpDatagram>(pdu)) {
              std::cout << *udpDatagram << std::endl;
         }
+        if(auto tcp = std::dynamic_pointer_cast<TCPHeader>(pdu)) {
+             std::cout << *tcp << std::endl;
+        }
     }
 }
 
@@ -49,6 +52,9 @@ void PacketParser::initPDUS() {
             if (L4PDU) {
                 if (auto udp = std::dynamic_pointer_cast<UdpDatagram>(L4PDU)) {
                     pdus[PduType::UDPDATAGRAM] = udp;
+                }
+                if (auto tcp = std::dynamic_pointer_cast<TCPHeader>(L4PDU)) {
+                    pdus[PduType::TCPPACKET] = tcp;
                 }
             }
         }

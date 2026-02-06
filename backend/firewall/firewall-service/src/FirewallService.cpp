@@ -26,6 +26,7 @@ void FirewallService::run(const std::string& standardPath) {
         packetParser->printL2Layer(PacketParser::PduType::ETHERNETFRAME);
         packetParser->printL3Layer(PacketParser::PduType::IPV4DATAGRAM);
         packetParser->printL4Layer(PacketParser::PduType::UDPDATAGRAM);
+        packetParser->printL4Layer(PacketParser::PduType::TCPPACKET);
         auto blockingRule = this->filterList->checkAllRules();
         if(blockingRule != nullptr) {
             std::cout << "!!! PACKET BLOCKED !!!" << std::endl;

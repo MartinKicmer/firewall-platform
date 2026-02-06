@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <netinet/in.h>
 #include <netinet/ip.h>
 void IPv4Datagram::parse() {
     if (this->payload.empty()) throw std::runtime_error("Empty payload");
@@ -52,6 +53,10 @@ void IPv4Datagram::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadS
     switch (this->protocol) {
         case IPPROTO_UDP:
             this->nextLayer = std::make_shared<UdpDatagram>(nextPayload,nextPayloadSize);
+            this->nextLayer->parse();
+            break;
+        case IPPROTO_TCP:
+            this->nextLayer = std::make_shared<TCPHeader>(nextPayload,nextPayloadSize);
             this->nextLayer->parse();
             break;
         default:

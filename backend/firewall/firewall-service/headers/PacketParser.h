@@ -17,13 +17,15 @@
 #include "AbstractPDU.h"
 #include "UdpDatagram.h"
 #include <unordered_map>
+#include "TCPHeader.h"
 
 class PacketParser {
 public:
     enum PduType {
         ETHERNETFRAME = 0,
         IPV4DATAGRAM = 1,
-        UDPDATAGRAM = 2
+        UDPDATAGRAM = 2,
+        TCPPACKET = 3
     };
     PacketParser(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data_ ) : data(data_) {
         this->initPDUS();

@@ -11,6 +11,7 @@
 #include <arpa/inet.h>     
 #include <nlohmann/json.hpp>
 #include "UdpDatagram.h"
+#include "TCPHeader.h"
 class IPv4Datagram : public AbstractPDU {
 public:
     IPv4Datagram(

@@ -23,6 +23,7 @@ add_executable(firewallService
   src/PacketRedirector.cpp
   src/FilterRuleLogger.cpp
   src/UdpDatagram.cpp
+  src/TCPHeader.cpp
   src/PacketblockerGateway.cpp
   headers/IPv4Datagram.h
   headers/AbstractPDU.h
@@ -39,6 +40,7 @@ add_executable(firewallService
   headers/PacketRedirector.h
   headers/FilterRuleLogger.h
   headers/UdpDatagram.h
+  headers/TCPHeader.h
 )
 target_compile_options(firewallService PRIVATE      
         -Wextra         
