@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <string>
 #include <tuple>
 #include <iostream>
@@ -107,6 +108,16 @@ struct L4SimpleRule : Rule {
 
 };
 
+struct L4TcpRule : public L4SimpleRule {
+    uint8_t flags;
+    uint16_t minWindow;
+    uint16_t maxWindow;
+
+    L4TcpRule(bool permit_, int limitCount_, uint16_t sPort_, uint16_t dPort_, 
+              uint8_t flags_ = 0, uint16_t minW = 0, uint16_t maxW = 65535) 
+        : L4SimpleRule(permit_, limitCount_, sPort_, dPort_), 
+          flags(flags_), minWindow(minW), maxWindow(maxW) {}
+};
 struct RemoveRule : public Rule {
     RemoveRule(int ID_,bool fromMemory_,const std::string& layer_) 
     : Rule(false, -1),ID(ID_),fromMemory(fromMemory_),layer(layer_) {} 

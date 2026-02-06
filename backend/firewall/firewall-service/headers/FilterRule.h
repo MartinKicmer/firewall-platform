@@ -35,5 +35,7 @@ private:
     std::shared_ptr<RuleComparer> ruleComparer;
 
     void formatL3ToJSON(nlohmann::json& j,std::shared_ptr<L3Rule> l3rule);
+    void formatL4TCPToJSON(nlohmann::json& j,std::shared_ptr<L4TcpRule> l3rule);
     static std::shared_ptr<L3Rule> deserializeL3Rule(const nlohmann::json& j);
+    static std::shared_ptr<L4TcpRule> deserializeL4TCPRule(const nlohmann::json& j);
 };

@@ -10,6 +10,34 @@ bool FilterRule::canPass() {
     }
 }
 
+
+void FilterRule::formatL4TCPToJSON(nlohmann::json& j,std::shared_ptr<L4TcpRule> l4tcp) {
+     j["ruleType"] = "L4TCP";
+     j["data"] = {
+            {"permit",l4tcp->permit},
+            {"limitCount",l4tcp->limitCount},
+            {"sourcePort",l4tcp->sPort},
+            {"destPort",l4tcp->dPort},
+            {"tcpFlags",l4tcp->flags},
+            {"minWindowsize",l4tcp->minWindow},
+            {"maxWindowsize",l4tcp->maxWindow}
+    };
+}
+
+
+std::shared_ptr<L4TcpRule> FilterRule::deserializeL4TCPRule(const nlohmann::json& j) {
+     std::shared_ptr<L4TcpRule> l4tcp = std::make_shared<L4TcpRule>(
+        j["data"]["permit"],
+        j["data"]["limitCount"],
+        j["data"]["sourcePort"],
+        j["data"]["destPort"],
+        j["data"]["tcpFlags"],
+        j["data"]["minWindowsize"],
+        j["data"]["maxWindowsize"]
+    );
+    return l4tcp;
+}
+
 std::string FilterRule::serializeToJSON()  {
     nlohmann::json j;
     if (auto lredirect = std::dynamic_pointer_cast<RedirectRule>(this->rule)) {
@@ -58,6 +86,9 @@ std::string FilterRule::serializeToJSON()  {
             {"sourcePort", l4Simple->sPort},
             {"destPort", l4Simple->dPort}
         };
+    }
+    if(auto l4tcp = std::dynamic_pointer_cast<L4TcpRule>(this->rule)) {
+        this->formatL4TCPToJSON(j, l4tcp);
     }
     return j.dump();
 }
@@ -124,6 +155,9 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
             j["data"]["limitCount"],
             j["data"]["sourcePort"],
             j["data"]["destPort"],j["update"]);
+    }
+    if(j["ruleType"] == "L4TCP") {
+        rule = deserializeL4TCPRule(j);
     }
     return std::make_shared<FilterRule>(rule, id,save);
 }
