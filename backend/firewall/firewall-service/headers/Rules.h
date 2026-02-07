@@ -128,7 +128,18 @@ struct L4TcpRule : public L4SimpleRule {
         : L4SimpleRule(permit_, limitCount_, sPort_, dPort_), 
           flags(flags_), minWindow(minW), maxWindow(maxW) {}
 
+    friend std::ostream& operator<<(std::ostream& o, const L4TcpRule& rule) {
+        std::cout << "L4TCP RULE\n---------\n";
+        std::cout << "ACTION: " << (rule.permit ? "permit" : "deny") << "\n";
+        std::cout << "LIMIT COUNT: " << rule.limitCount << "\n";
+        std::cout << "SOURCE PORT: " << rule.sPort << "\n";
+        std::cout << "DEST PORT: " << rule.dPort << "\n";
+        std::cout << "MAX WINDOW SIZE: " << rule.maxWindow << "\n";
+        std::cout << "MIN WINDOW SIZET: " << rule.minWindow << "\n";
+        std::cout << "FLAGS: " << static_cast<int>(rule.flags) << "\n";
 
+        return o;
+    }
     bool match(std::shared_ptr<PacketParser> parser) override;
 };
 struct RemoveRule : public Rule {

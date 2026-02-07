@@ -193,9 +193,10 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectL4TCPRules() {
         int dPort =  sqlite3_column_int(stmt, 4);
         int maxWindowsize = sqlite3_column_int(stmt, 5);
         int minWindowsize = sqlite3_column_int(stmt,6);
-        int flags = sqlite3_column_int(stmt, 7);
+        int rawFlags = sqlite3_column_int(stmt, 7);
+        uint8_t finalFlags = static_cast<uint8_t>(rawFlags);
         auto rule = std::make_shared<L4TcpRule>(
-            permit, limitCount,sPort,dPort,minWindowsize,maxWindowsize,flags);
+            permit, limitCount,sPort,dPort,finalFlags,minWindowsize,maxWindowsize);
         auto filterRule = std::make_shared<FilterRule>(rule,ID);
         rules.push_back(filterRule);
     }
@@ -220,7 +221,7 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findL4TCPRuleByAction
         throw std::runtime_error("Could not prepare SELECT for L4TCP rules\n"); 
     }
 
-    sqlite3_bind_int(stmt, permit, 1);
+    sqlite3_bind_int(stmt, 1, permit ? 1 : 0);
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int ID = sqlite3_column_int(stmt, 0);
@@ -242,27 +243,33 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::findL4TCPRuleByAction
     sqlite3_finalize(stmt);
     return results;
 }
-
 void FilterRuleLogger::insertL4TCPRule(std::shared_ptr<FilterRule> rule) {
-    this->insertL4SimpleRule(rule);
-    const char* sql = "INSERT INTO l4TCP (id, maxWindowsize, minWindowsize, flags) VALUES (?, ?, ?, ?);";
-    sqlite3_stmt* stmt;
-
     auto l4TCP = std::dynamic_pointer_cast<L4TcpRule>(rule->getRule());
+    if (!l4TCP) return;
 
-    if (sqlite3_prepare_v2(this->db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
-        sqlite3_bind_int(stmt, 1, rule->getID()); 
-        sqlite3_bind_int(stmt, 2, l4TCP->maxWindow);
-        sqlite3_bind_int(stmt, 3, l4TCP->minWindow);
-        sqlite3_bind_int(stmt, 4, l4TCP->flags);
+    sqlite3_exec(this->db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+    try {
+        this->insertL4SimpleRule(rule); 
 
-        if (sqlite3_step(stmt) != SQLITE_DONE) {
-            throw std::runtime_error("Could not insert L4TCP rule\n");
+        const char* sql = "INSERT INTO l4TCP (id, maxWindowsize, minWindowsize, flags) VALUES (?, ?, ?, ?);";
+        sqlite3_stmt* stmt;
+        if (sqlite3_prepare_v2(this->db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+            sqlite3_bind_int(stmt, 1, rule->getID());
+            sqlite3_bind_int(stmt, 2, l4TCP->maxWindow);
+            sqlite3_bind_int(stmt, 3, l4TCP->minWindow);
+            sqlite3_bind_int(stmt, 4, l4TCP->flags);
+
+            if (sqlite3_step(stmt) != SQLITE_DONE) {
+                sqlite3_finalize(stmt);
+                throw std::runtime_error("L4TCP part insert failed");
+            }
+            sqlite3_finalize(stmt);
         }
-    } else {
-        throw std::runtime_error("Could not prepare L4TCP insert\n");
+        sqlite3_exec(this->db, "COMMIT;", nullptr, nullptr, nullptr);
+    } catch (...) {
+        sqlite3_exec(this->db, "ROLLBACK;", nullptr, nullptr, nullptr);
+        throw;
     }
-    sqlite3_finalize(stmt);
 }
 
 void FilterRuleLogger::openDB(const std::string& dbName) {
@@ -296,20 +303,38 @@ void FilterRuleLogger::setupTables() {
     }   
 }
 
-void FilterRuleLogger::log(std::shared_ptr<FilterRule> rule) {
-    auto currentRule = rule->getRule();
-    if(auto l2rule = std::dynamic_pointer_cast<L2Rule>(currentRule)) {
-        this->insertL2Rule(rule);
-    }
-    if(auto l3rule = std::dynamic_pointer_cast<L3Rule>(currentRule)) {
-        this->insertL3Rule(rule);
-    }
-    if(auto l4Simple = std::dynamic_pointer_cast<L4SimpleRule>(currentRule)) {
-        this->insertL4SimpleRule(rule);
-    }
 
+void FilterRuleLogger::clearAllRules() {
+    const char* sql = "BEGIN TRANSACTION;"
+                      "DELETE FROM l2_rules;"
+                      "DELETE FROM l3_rules;"
+                      "DELETE FROM l4Simple_rules;"
+                      "DELETE FROM l4TCP;"
+                      "DELETE FROM sqlite_sequence;" 
+                      "COMMIT;";
+    
+    char* errorMessage = nullptr;
+    if (sqlite3_exec(this->db, sql, nullptr, nullptr, &errorMessage) != SQLITE_OK) {
+        std::cerr << "Chyba při mazání: " << errorMessage << std::endl;
+        sqlite3_free(errorMessage);
+    }
 }
 
+
+
+
+void FilterRuleLogger::log(std::shared_ptr<FilterRule> rule) {
+    auto currentRule = rule->getRule();
+    if(std::dynamic_pointer_cast<L4TcpRule>(currentRule)) {
+        this->insertL4TCPRule(rule);
+    } else if(std::dynamic_pointer_cast<L4SimpleRule>(currentRule)) {
+        this->insertL4SimpleRule(rule);
+    } else if(std::dynamic_pointer_cast<L3Rule>(currentRule)) {
+        this->insertL3Rule(rule);
+    } else if(std::dynamic_pointer_cast<L2Rule>(currentRule)) {
+        this->insertL2Rule(rule);
+    }
+}
 
 void FilterRuleLogger::insertL4SimpleRule(std::shared_ptr<FilterRule> rule) {
     sqlite3_stmt* stmt = nullptr;
@@ -329,6 +354,7 @@ void FilterRuleLogger::insertL4SimpleRule(std::shared_ptr<FilterRule> rule) {
     }
     std::cout << "New L4Simple rule saved into DB " << std::endl;
     sqlite3_finalize(stmt);
+
 }
 
 
@@ -419,8 +445,8 @@ void FilterRuleLogger::updateRule(std::shared_ptr<FilterRule> rule) {
         sqlite3_bind_int(stmt, 3, l4TCP->sPort);
         sqlite3_bind_int(stmt, 4, l4TCP->dPort);
         sqlite3_bind_int(stmt, 5, l4TCP->maxWindow);
-        sqlite3_bind_int(stmt, 5, l4TCP->minWindow);
-        sqlite3_bind_int(stmt, 5, l4TCP->flags);
+        sqlite3_bind_int(stmt, 6, l4TCP->minWindow);
+        sqlite3_bind_int(stmt, 7, l4TCP->flags);
     }
     if (stmt) {
         if (sqlite3_step(stmt) != SQLITE_DONE) {
@@ -457,28 +483,29 @@ void FilterRuleLogger::insertL2Rule(std::shared_ptr<FilterRule> rule) {
 std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectL4SimpleRules() {
     std::vector<std::shared_ptr<FilterRule>> rules;
     sqlite3_stmt* stmt;
-    const char* sql = "SELECT id,permit,limit_count,source_port,dest_port FROM l4Simple_rules;";
+    const char* sql = "SELECT s.id, s.permit, s.limit_count, s.source_port, s.dest_port "
+                      "FROM l4Simple_rules s "
+                      "LEFT JOIN l4TCP t ON s.id = t.id "
+                      "WHERE t.id IS NULL;";
 
     if (sqlite3_prepare_v2(this->db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        std::runtime_error("Error while preparing sql select for l3 rules\n");
+        throw std::runtime_error("Error while preparing sql select for l4Simple rules\n");
     }
 
-     while (sqlite3_step(stmt) == SQLITE_ROW) {
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
         int ID = sqlite3_column_int(stmt, 0);
         bool permit = sqlite3_column_int(stmt, 1) != 0;
         int limitCount = sqlite3_column_int(stmt, 2);
         int sPort =  sqlite3_column_int(stmt, 3);
         int dPort =  sqlite3_column_int(stmt, 4);
-        auto rule = std::make_shared<L4SimpleRule>(
-            permit, limitCount,sPort,dPort);
-        auto filterRule = std::make_shared<FilterRule>(rule,ID);
-        rules.push_back(filterRule);
+        
+        auto rule = std::make_shared<L4SimpleRule>(permit, limitCount, sPort, dPort);
+        rules.push_back(std::make_shared<FilterRule>(rule, ID));
     }
     
     sqlite3_finalize(stmt);
     return rules;
 }
-
 
 std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectL3Rules() {
     std::vector<std::shared_ptr<FilterRule>> rules;
@@ -533,6 +560,8 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectL2Rules() {
         std::string destMac = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 4));
         auto rule = std::make_shared<L2Rule>(permit, limitCount, srcMac, destMac);
         auto filterRule = std::make_shared<FilterRule>(rule,id);
+
+        rules.push_back(filterRule);
     }
 
     sqlite3_finalize(stmt);
@@ -547,7 +576,7 @@ std::vector<std::shared_ptr<FilterRule>> FilterRuleLogger::selectAllRules() {
     std::vector<std::shared_ptr<FilterRule>> allRules;
     allRules.insert(allRules.end(), l2rules.begin(), l2rules.end());
     allRules.insert(allRules.end(), l3rules.begin(), l3rules.end());
-    allRules.insert(allRules.end(), l4SimpleRules.begin(), l4SimpleRules.end());
+    if(l4tcpRules.empty())  allRules.insert(allRules.end(), l4SimpleRules.begin(), l4SimpleRules.end());
     allRules.insert(allRules.end(), l4tcpRules.begin(), l4tcpRules.end());
     return allRules;
 }

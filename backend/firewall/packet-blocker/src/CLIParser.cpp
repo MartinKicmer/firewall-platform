@@ -159,6 +159,12 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
         return filterRule;
     }
 
+    if(layer == "L4TCP") {
+        auto rule = this->parseL4TCPRule();
+        filterRule = std::make_shared<FilterRule>(rule,RID,save);
+        return filterRule;
+    }
+
     throw std::runtime_error("Could not find firewall rule in CLI args\n");
 }
 

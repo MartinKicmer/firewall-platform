@@ -28,7 +28,11 @@ void FilterRuleList::printFilterRuleInfo(std::shared_ptr<FilterRule> rule) {
     }
     if(auto l3rule = std::dynamic_pointer_cast<L3Rule>(rule->getRule())) {
         std::cout << *l3rule << std::endl;
-    } 
+    }
+    if(auto l4TCP = std::dynamic_pointer_cast<L4TcpRule>(rule->getRule())) {
+        std::cout << *l4TCP << std::endl;
+        return;
+    }  
     if(auto l4Simple = std::dynamic_pointer_cast<L4SimpleRule>(rule->getRule())) {
         std::cout << *l4Simple << std::endl;
     } 

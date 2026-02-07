@@ -4,7 +4,9 @@
 - L3:
     packet-blocker -rid 1 -l L3 -action deny -sa ../prefix -da ../prefix -ttlMax ... -ttlMin ... -proto ... -allowFrag ... -tos ... -save(optional) 
 - L4-simple:
-    packet-blocker -rid 1 -l L4Simple -action deny -sport ... -dport ...  
+    packet-blocker -rid 1 -l L4Simple -action deny -sport ... -dport ... -save(optional) 
+- L4-TCP
+    packet-blocker -rid 1 -l L4TCP -action deny -sport ... -dport ... -flag SYN(ACK,FIN) -maxWin ... -minWin -save(optional) 
 - REDIRECT PACKETS:
     packet-blocker -l L3 -action deny redirect 10(all)
 - SELECT RULES:

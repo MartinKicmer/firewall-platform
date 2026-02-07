@@ -15,6 +15,8 @@ public:
     std::shared_ptr<FilterRule> findRulesByID(int ID);
     void removeRuleByID(std::shared_ptr<FilterRule> rule);
     void updateRule(std::shared_ptr<FilterRule> rule);
+
+    void clearAllRules();
 private:
     FilterRuleLogger(const std::string& dbName,const std::string& schema_) : schema(schema_ ) {
         this->openDB(dbName);
