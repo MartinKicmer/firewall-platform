@@ -15,11 +15,12 @@
 class PacketRedirector {
 public:
     PacketRedirector() : redirect(false) {}
-    
+     
     void redirectPacket(std::shared_ptr<PacketParser> parser);
     std::optional<nlohmann::json> recievePacket();
     bool canRedirect() const { return this->redirect; }
-    void setRule(std::shared_ptr<FilterRule> rule_) { 
+    void setRule(std::shared_ptr<FilterRule> rule_) {
+        if(this->redirect) return; 
         this->rule = rule_; 
         this->redirect = true;
     }

@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS l3_rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     permit BOOLEAN NOT NULL,
-    limit_count INTEGER,
+    limit_count INTEGER DEFAULT -1,
     source_ip TEXT NOT NULL,
     source_prefix INTEGER NOT NULL,
     dest_ip TEXT NOT NULL,
@@ -32,4 +32,11 @@ CREATE TABLE IF NOT EXISTS l4Simple_rules (
     dest_port INTEGER DEFAULT -1,
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS l4TCP (
+    id INTEGER PRIMARY KEY, 
+    maxWindowsize INTEGER DEFAULT -1,
+    minWindowsize INTEGER DEFAULT -1,
+    flags INTEGER DEFAULT 0,
+    FOREIGN KEY (id) REFERENCES l4Simple_rules(id) ON DELETE CASCADE
 );
