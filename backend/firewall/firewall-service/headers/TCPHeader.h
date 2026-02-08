@@ -1,11 +1,12 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <netinet/tcp.h>
 #include "AbstractPDU.h"
 #include <arpa/inet.h>
 #include <iostream>
 #include <ostream>
-
+#include <nlohmann/json.hpp>
 class TCPHeader : public AbstractPDU {
 public:
     TCPHeader(const uint8_t* payload_, std::size_t payloadLen_) 
@@ -54,6 +55,24 @@ public:
         << "==================";
         return o;
     }
+
+    nlohmann::json serialize() const;
+
+    static std::shared_ptr<TCPHeader> deserialize(const nlohmann::json& j) {
+        auto tcp = std::make_shared<TCPHeader>(nullptr,0);
+        if (j.contains("source_port")) tcp->sPort = j.at("source_port").get<uint16_t>();
+        if (j.contains("dest_port"))   tcp->dPort = j.at("dest_port").get<uint16_t>();
+        if (j.contains("seq_number"))  tcp->seqNumber = j.at("seq_number").get<uint32_t>();
+        if (j.contains("ack_number"))  tcp->ackNumber = j.at("ack_number").get<uint32_t>();
+        if (j.contains("flags"))       tcp->flags = j.at("flags").get<uint8_t>();
+        if (j.contains("window_size")) tcp->windowSize = j.at("window_size").get<uint16_t>();
+        if (j.contains("checksum"))    tcp->checkSum = j.at("checksum").get<uint16_t>();
+        if (j.contains("urg_pointer")) tcp->urgPointer = j.at("urg_pointer").get<uint16_t>();
+
+        return tcp;
+}
+
+
 private:
     short sPort = 0;
     short dPort = 0;

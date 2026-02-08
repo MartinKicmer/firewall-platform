@@ -26,6 +26,12 @@ void PacketRedirector::redirectPacket(std::shared_ptr<PacketParser> parser) {
             connector.sendData(udp->serialize().dump());
         }
     }
+    if(redirectRule->layer == "L4TCP") {
+        auto tcp = parser->getTCPPACKET();
+        if(tcp) {
+            connector.sendData(tcp->serialize().dump());
+        }
+    }
     if(redirectRule->count != -1) redirectRule->count--;
 
     if(redirectRule->count == 0) {

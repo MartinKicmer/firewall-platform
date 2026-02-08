@@ -1,6 +1,7 @@
 #pragma once
 #include "../../firewall-service/headers/Rules.h"
 #include "../../firewall-service/headers/FilterRule.h"
+#include "InteractiveCLIMode.h"
 #include <memory>
 #include <stdexcept>   
 #include <cstring>
@@ -21,7 +22,7 @@ private:
     const char** argv;
     const int argc;
     std::unordered_map<std::string,int> protocols;
-
+    InteractiveCLIMode interactiveCLIMode;
 
     bool contains(const std::string& arg);
 

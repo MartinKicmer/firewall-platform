@@ -4,7 +4,7 @@ project(packet-blocker)
 set(CMAKE_CXX_STANDARD 23)
 
 find_package(nlohmann_json REQUIRED)
-
+find_package(Curses REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/headers)
 
@@ -22,7 +22,9 @@ add_executable(packet-blocker
   ../../firewall-service/src/UdpDatagram.cpp
   ../../firewall-service/src/TCPHeader.cpp
   ../../firewall-service/src/Rules.cpp
+  src/InteractiveCLIMode.cpp
   headers/CLIParser.h
+  headers/InteractiveCLIMode.h
   headers/FirewallGateway.h
   ../../firewall-service/headers/MQConnector.h
   ../../firewall-service/headers/FilterRule.h
@@ -35,5 +37,5 @@ add_executable(packet-blocker
   ../../firewall-service/headers/TCPHeader.h
   
 )
-
-target_link_libraries(packet-blocker PRIVATE nlohmann_json::nlohmann_json)
+target_include_directories(packet-blocker PRIVATE ${CURSES_INCLUDE_DIRS})
+target_link_libraries(packet-blocker PRIVATE nlohmann_json::nlohmann_json PRIVATE ${CURSES_LIBRARIES})

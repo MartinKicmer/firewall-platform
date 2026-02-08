@@ -123,6 +123,14 @@ std::shared_ptr<L4SimpleRule> CLIParser::parseSimpleL4Rule() {
     return std::make_shared<L4SimpleRule>(permit,limitCount,sPort,dPort,update);
 }
 std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
+
+    if(this->contains("-interactive")) {
+        this->interactiveCLIMode.show();
+        auto parsedRule = this->interactiveCLIMode.getParsedFilterRule();
+        if(parsedRule) return parsedRule;
+        else throw std::runtime_error("Interactive CLI could not create rule");
+    }
+
     if(this->contains("redirect")) {
         auto rule = this->parseRedirectRule();        
         return std::make_shared<FilterRule>(rule,-1);

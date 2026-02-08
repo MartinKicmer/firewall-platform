@@ -32,6 +32,20 @@ void TCPHeader::parse() {
 
 }
 
+nlohmann::json  TCPHeader::serialize() const {
+    return nlohmann::json{
+        {"source_port", sPort},
+        {"dest_port", dPort},
+        {"seq_number", seqNumber},
+        {"ack_number", ackNumber},
+        {"flags", flags},
+        {"window_size", windowSize},
+        {"checksum", checkSum},
+        {"urg_pointer", urgPointer}
+    };
+}
+
 void TCPHeader::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) {
     return;
 }
+
