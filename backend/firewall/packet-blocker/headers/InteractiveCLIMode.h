@@ -34,6 +34,7 @@ private:
     void showConcreteLayerOption();
     void showDoneOption();
     void createFirewallRule();
+    void showQuitOption();
     bool stop = false;
     MenuState currentState;
     int selectionIndex = 0;

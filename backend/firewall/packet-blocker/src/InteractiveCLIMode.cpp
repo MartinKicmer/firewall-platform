@@ -22,10 +22,15 @@ void InteractiveCLIMode::show() {
     init_pair(3, COLOR_BLACK, COLOR_WHITE);
     init_pair(4, COLOR_WHITE, COLOR_GREEN);
     init_pair(5, COLOR_WHITE, COLOR_WHITE);
+    init_pair(6, COLOR_WHITE, COLOR_RED);
     while(!this->stop) {
         erase();
         this->showLayout();
         this->getSelectionIndex('0', '4');
+        if(this->selectionIndex == 'q') {
+            this->stop = true;
+            break;
+        }
         if(this->selectionIndex == '\n') this->showMenuLayout();
         refresh();
     }
@@ -80,6 +85,24 @@ void InteractiveCLIMode::showDoneOption() {
 
 }
 
+
+void InteractiveCLIMode::showQuitOption() {
+     const char* art[] = {
+    "+------------------------------------------------------------+",
+    "|           [ PRESS q ]  T O   Q U I T   M E N U             |",
+    "+------------------------------------------------------------+"
+    };
+    int artRows = 3;
+    int artCols = 64; 
+    int startY = (LINES ) - 6; 
+    int startX = (COLS - artCols) / 2;
+
+    attron(COLOR_PAIR(6) | A_BOLD); 
+    for (int i = 0; i < artRows; i++) {
+        mvprintw(startY + i, startX, "%s", art[i]);
+    }
+    attroff(COLOR_PAIR(6) | A_BOLD);
+}
 
 void InteractiveCLIMode::createFirewallRule() {
     std::shared_ptr<Rule> rule = nullptr;
@@ -341,4 +364,5 @@ void InteractiveCLIMode::showLayout() {
             if (i == this->selectionIndex) attroff(COLOR_PAIR(2));
             attroff(A_BOLD);
     }
+    this->showQuitOption();
 }
