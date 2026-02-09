@@ -1,5 +1,103 @@
 #include "../headers/FirewallService.h"
+#include "../headers/KernelSocket.h"
+#include "../headers/PacketParser.h"
+#include <iterator>
 #include <memory>
+
+
+#include "../headers/FirewallService.h"
+#include "../headers/KernelSocket.h"
+#include "../headers/PacketParser.h"
+#include <memory>
+#include <iostream>
+#include <cstring>
+#include <algorithm>
+#include <netinet/in.h> // pro ntohl
+
+int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
+                        struct nfgenmsg* nfmsg,
+                        struct nfq_data* nfa,
+                        void* data) {
+    FirewallService* fw = static_cast<FirewallService*>(data);
+
+    uint32_t id = 0;
+    struct nfqnl_msg_packet_hdr* ph = nfq_get_msg_packet_hdr(nfa);
+    if (ph) {
+        id = ntohl(ph->packet_id);
+    } else {
+        return 0; 
+    }
+
+    unsigned char* payload;
+    int len = nfq_get_payload(nfa, &payload);
+    
+
+    bool permit = true;
+
+    if (len >= 0) {
+        try {
+            std::array<uint8_t, BUFSIZ> buf{};
+            std::memcpy(buf.data(), payload, std::min(static_cast<std::size_t>(len), buf.size()));
+
+            auto packetTuple = std::make_tuple(len, buf);
+            auto parser = std::make_shared<PacketParser>(packetTuple);
+
+            fw->filterList->setParser(parser);
+
+            parser->printL2Layer(PacketParser::PduType::ETHERNETFRAME);
+            parser->printL3Layer(PacketParser::PduType::IPV4DATAGRAM);
+            parser->printL4Layer(PacketParser::PduType::UDPDATAGRAM);
+            parser->printL4Layer(PacketParser::PduType::TCPPACKET);
+            auto blockingRule = fw->filterList->checkAllRules();
+            if (blockingRule != nullptr) {
+                std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
+                fw->filterList->printFilterRuleInfo(blockingRule);
+                permit = false; 
+            }
+
+            if (fw->packetRedirector->canRedirect()) {
+                auto ruleWrap = fw->packetRedirector->getRule();
+                if (ruleWrap && ruleWrap->getRule()) {
+                    if ((ruleWrap->getRule()->permit && !blockingRule) ||
+                        (!ruleWrap->getRule()->permit && blockingRule)) {
+                        fw->packetRedirector->redirectPacket(parser);
+                    }
+                }
+            }
+
+        } catch (const std::exception& e) {
+            std::cerr << "Parser error (ignoring for safety): " << e.what() << std::endl;
+        } catch (...) {
+            std::cerr << "Unknown critical error in callback logic!" << std::endl;
+        }
+    }
+
+    if (permit) {
+        std::cout << "-------\nPACKET PASSED\n-------" << std::endl;
+    }
+
+    return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
+}
+
+
+void FirewallService::deleteKernelSocket(KernelSocket *ks) {
+        delete ks;
+}
+
+FirewallService::FirewallService() 
+            : config(nullptr), redirect(false),
+            kernelSocket(new KernelSocket(this), &FirewallService::deleteKernelSocket) 
+{
+    try {
+        this->filterList = std::make_shared<FilterRuleList>();
+        this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
+        this->packetRedirector = std::make_shared<PacketRedirector>();
+        this->packetBlockerGateway = std::make_unique<PacketblockerGateway>("/fireWallBlocker",this->filterList);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+}
 
 
 void FirewallService::loadSavedRules() {
@@ -14,37 +112,11 @@ void FirewallService::loadSavedRules() {
 void FirewallService::run(const std::string& standardPath) {
     try {
         this->config = this->loadFromConfig(standardPath);
-        this->config->bindFirstActiveInterface(this->rawSocket);
         this->loadSavedRules();
         std::cout << this->config << std::endl;
-       while(1) {
-        this->rawSocket.readFromSocket();
-        auto& data = this->rawSocket.getReadData();
-        
-        auto packetParser = std::make_shared<PacketParser>(data);
-        this->filterList->setParser(packetParser);
-        packetParser->printL2Layer(PacketParser::PduType::ETHERNETFRAME);
-        packetParser->printL3Layer(PacketParser::PduType::IPV4DATAGRAM);
-        packetParser->printL4Layer(PacketParser::PduType::UDPDATAGRAM);
-        packetParser->printL4Layer(PacketParser::PduType::TCPPACKET);
-        auto blockingRule = this->filterList->checkAllRules();
-        if(blockingRule != nullptr) {
-            std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
-            this->filterList->printFilterRuleInfo(blockingRule);
-        } else {
-            //std::cout << "Packet passed" << std::endl;
+        while(1) {
+            this->kernelSocket->recieveData();
         }
-
-        if(this->packetRedirector->canRedirect()) {
-            auto rule = this->packetRedirector->getRule();
-            if(rule->getRule()->permit && !blockingRule) {
-                this->packetRedirector->redirectPacket(packetParser);
-            }
-            if(!rule->getRule()->permit && blockingRule) {
-                this->packetRedirector->redirectPacket(packetParser);
-            }
-        }
-}
     } catch( const std::exception& e) {
         std::cerr << e.what() << std::endl;
         std::exit(EXIT_FAILURE);

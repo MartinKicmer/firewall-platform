@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdlib>
+#include <exception>
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,13 +12,22 @@
 #include <iostream>
 #include "FilterRule.h"
 #include "PacketblockerGateway.h"
-#include "RawSocket.h"
-#include "PacketParser.h"
 #include "FilterRuleList.h"
 #include "MQConnector.h"
 #include "PacketRedirector.h"
 #include <atomic>
 #include "FilterRuleLogger.h"
+#include <libnetfilter_queue/libnetfilter_queue.h>
+
+#ifndef NF_ACCEPT
+#define NF_ACCEPT 1
+#endif
+
+#ifndef NF_DROP
+#define NF_DROP 0
+#endif
+class KernelSocket;
+class PacketParser;
 class FirewallService {
 public:
     struct Interface {
@@ -36,22 +47,8 @@ public:
 
         }
 
-        void bindFirstActiveInterface(RawSocket& rsocket) {
-            for(const auto& i : this->activeInterfaces) {
-                if(i.state == "input") {
-                    rsocket.bindSocket(i.name);
-                    break;
-                }
-            }
-        }
     };
-    FirewallService() : config(nullptr),redirect(false) {
-        this->rawSocket.initSocket();
-        this->filterList = std::make_shared<FilterRuleList>();
-        this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
-        this->packetRedirector = std::make_shared<PacketRedirector>();
-        this->packetBlockerGateway = std::make_unique<PacketblockerGateway>("/fireWallBlocker",this->filterList);
-    }
+    FirewallService();
     ~FirewallService() {
         if(this->packetBlockerT.joinable()) {
             this->packetBlockerT.join();
@@ -60,16 +57,22 @@ public:
     void run(const std::string& standardPath);
     void loadSavedRules();
     void removeRuleFromMemory(std::shared_ptr<FilterRule> rule);
+
+    static int handlePacketCallback(struct nfq_q_handle* qh,
+                        struct nfgenmsg* nfmsg,
+                        struct nfq_data* nfa,
+                        void* data);
+
+    static void deleteKernelSocket(KernelSocket* ks);
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
     void startPacketBlockerCommunication();
     void writePacketBlockerData(const std::string& data);
-
-    std::unique_ptr<Config> config;
+    std::unique_ptr<KernelSocket, void(*)(KernelSocket*)> kernelSocket;
+    std::unique_ptr<Config> config = nullptr;
     std::thread packetBlockerT;
-    RawSocket rawSocket;
     bool redirect;
-    std::shared_ptr<FilterRuleList> filterList;
-    std::shared_ptr<PacketRedirector> packetRedirector;
-    std::unique_ptr<PacketblockerGateway> packetBlockerGateway;
+    std::shared_ptr<FilterRuleList> filterList = nullptr;
+    std::shared_ptr<PacketRedirector> packetRedirector = nullptr;
+    std::unique_ptr<PacketblockerGateway> packetBlockerGateway = nullptr;
 };

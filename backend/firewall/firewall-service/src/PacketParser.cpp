@@ -35,30 +35,44 @@ void PacketParser::printL4Layer(PacketParser::PduType type) {
 
 void PacketParser::initPDUS() {
     const auto& [payloadLen, payload] = this->data;
-    
-    for(int i = 0; i < 3; ++i) this->pdus[i] = nullptr;
+    if (payloadLen == 0) return;
+
+    for(int i = 0; i <= 3; ++i) this->pdus[i] = nullptr;
+
+    const uint8_t* rawData = payload.data();
+    std::shared_ptr<AbstractPDU> l3Layer = nullptr;
 
     try {
-        auto frame = std::make_shared<EthernetFrame>(payload.data(), payloadLen);
-        frame->parse();
-        pdus[PduType::ETHERNETFRAME] = frame;
 
-        auto L3PDU = frame->getNextLayer();
-        if (!L3PDU) return; 
-
-        if (auto ipv4 = std::dynamic_pointer_cast<IPv4Datagram>(L3PDU)) {
+        if (rawData[0] == 0x45 || (rawData[0] & 0xF0) == 0x60) {
+            auto ipv4 = std::make_shared<IPv4Datagram>(rawData, payloadLen);
+            ipv4->parse();
             pdus[PduType::IPV4DATAGRAM] = ipv4;
-            auto L4PDU = L3PDU->getNextLayer();
-            if (L4PDU) {
-                if (auto udp = std::dynamic_pointer_cast<UdpDatagram>(L4PDU)) {
+            l3Layer = ipv4;
+        } 
+        else {
+            auto frame = std::make_shared<EthernetFrame>(rawData, payloadLen);
+            frame->parse(); 
+            pdus[PduType::ETHERNETFRAME] = frame;
+            l3Layer = frame->getNextLayer();
+            
+            if (auto ipv4 = std::dynamic_pointer_cast<IPv4Datagram>(l3Layer)) {
+                pdus[PduType::IPV4DATAGRAM] = ipv4;
+            }
+        }
+
+        if (l3Layer) {
+            auto l4Layer = l3Layer->getNextLayer();
+            if (l4Layer) {
+                if (auto udp = std::dynamic_pointer_cast<UdpDatagram>(l4Layer)) {
                     pdus[PduType::UDPDATAGRAM] = udp;
                 }
-                if (auto tcp = std::dynamic_pointer_cast<TCPHeader>(L4PDU)) {
+                else if (auto tcp = std::dynamic_pointer_cast<TCPHeader>(l4Layer)) {
                     pdus[PduType::TCPPACKET] = tcp;
                 }
             }
         }
     } catch (const std::exception& e) {
-        std::cerr << "Parser Error: " << e.what() << std::endl;
+        std::cout << "Packet type wasnt detected\n";
     }
 }

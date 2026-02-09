@@ -27,7 +27,7 @@ public:
         UDPDATAGRAM = 2,
         TCPPACKET = 3
     };
-    PacketParser(std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data_ ) : data(data_) {
+    PacketParser(const std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data_ ) : data(data_) {
         this->initPDUS();
     }
 
@@ -52,5 +52,5 @@ public:
     
 private:
     std::unordered_map<int,std::shared_ptr<AbstractPDU>> pdus;
-    std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data;
+    const std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data;
 };

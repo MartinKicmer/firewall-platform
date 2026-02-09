@@ -12,7 +12,6 @@ include_directories(${CMAKE_SOURCE_DIR}/headers)
 add_executable(firewallService
   src/main.cpp
   src/FirewallService.cpp
-  src/RawSocket.cpp
   src/PacketParser.cpp
   src/FilterRule.cpp
   src/FilterRuleList.cpp
@@ -26,12 +25,12 @@ add_executable(firewallService
   src/TCPHeader.cpp
   src/PacketblockerGateway.cpp
   src/Rules.cpp
+  src/KernelSocket.cpp
   headers/IPv4Datagram.h
   headers/AbstractPDU.h
   headers/RuleComparer.h
   headers/FirewallService.h
   headers/PacketblockerGateway.h
-  headers/RawSocket.h
   headers/EthernetFrame.h
   headers/PacketParser.h
   headers/FilterRule.h
@@ -42,6 +41,7 @@ add_executable(firewallService
   headers/FilterRuleLogger.h
   headers/UdpDatagram.h
   headers/TCPHeader.h
+  headers/KernelSocket.h
 )
 target_compile_options(firewallService PRIVATE      
         -Wextra         
@@ -57,4 +57,6 @@ target_link_libraries(firewallService PRIVATE
     rt 
     pthread 
     SQLite::SQLite3
+    netfilter_queue
+    nfnetlink
 )
