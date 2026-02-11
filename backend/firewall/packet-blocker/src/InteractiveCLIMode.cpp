@@ -108,31 +108,6 @@ void InteractiveCLIMode::createFirewallRule() {
     std::shared_ptr<Rule> rule = nullptr;
     auto& inputs = this->concreteLayerInputs.at(this->lastSelectionIndex);
 
-    auto safeStoi = [](const std::string& s, int defaultVal) {
-        try { return s.empty() ? defaultVal : std::stoi(s); }
-        catch (...) { return defaultVal; }
-    };
-
-    auto isPermit = [](const std::string& s) { return s == "y" || s == "Y"; };
-
-    auto parseIP = [](std::tuple<std::string,int>& ipPref,const std::string& pref) {
-        if(pref.empty()) {
-             ipPref = std::make_tuple("none",-1);
-             return;
-        }
-        std::stringstream ss(pref);
-        std::string line;
-        std::string finalIP = "none";
-        int finalPref = -1;
-
-        std::getline(ss,line,'/');
-        finalIP = line;
-        std::getline(ss,line,'/');
-        finalPref = std::stoi(line);
-
-        ipPref = std::make_tuple(finalIP,finalPref);
-    };
-
     int ID = -1;
     switch (this->lastSelectionIndex) {
         case 0: ID = safeStoi(inputs.at(4), -1); break; 
@@ -196,6 +171,11 @@ void InteractiveCLIMode::createFirewallRule() {
     }
 }
 
+
+void InteractiveCLIMode::moveIndex(int& index,int ch,int max) {
+    if (ch == KEY_UP && index > 0) index--;
+    if (ch == KEY_DOWN && index < max - 1) index++;
+}
 void InteractiveCLIMode::showConcreteLayerOption() {
     int formIndex = 0; 
     auto& options = this->concreteLayerOptions.at(this->lastSelectionIndex);
@@ -212,8 +192,6 @@ void InteractiveCLIMode::showConcreteLayerOption() {
         int startY = (LINES - totalFields) / 2;
         int centerX = (COLS - 45) / 2;
         for(int i = 0; i < totalFields; ++i) {
-
-            
             if (i == formIndex) {
                 attron(COLOR_PAIR(2) | A_REVERSE);
                 mvprintw(startY + i, centerX, " > %-20s [ %-20s ]", options[i].c_str(), this->concreteLayerInputs.at(this->lastSelectionIndex).at(i).c_str());
@@ -228,8 +206,7 @@ void InteractiveCLIMode::showConcreteLayerOption() {
         refresh();
 
         int ch = getch();
-        if (ch == KEY_UP && formIndex > 0) formIndex--;
-        if (ch == KEY_DOWN && formIndex < totalFields - 1) formIndex++;
+        this->moveIndex(formIndex, ch, totalFields);
         if (ch == 'b') {
             break; 
         }
@@ -282,9 +259,67 @@ void InteractiveCLIMode::showMainMenu() {
 }
 
 
+void InteractiveCLIMode::createSelectRule() {
+    int ID = this->safeStoi(this->concreteSelectInputs.at(0),-1);
+    bool fromMemory = this->isPermit(this->concreteSelectInputs.at(1));
+    std::string& layer = this->concreteSelectInputs.at(2);
+    bool permit = this->isPermit(this->concreteSelectInputs.at(3));
+
+    std::shared_ptr<SelectRule> selectRule = std::make_shared<SelectRule>(permit,ID,layer,fromMemory);
+    this->parsedFilterRule = std::make_shared<FilterRule>(selectRule,ID);
+}
+
+void InteractiveCLIMode::showSelectMenu() {
+    int formIndex = 0; 
+    auto& options = this->selectConcreteOptions;
+    int totalFields = options.size();
+
+    while(!this->stop) {
+        erase();
+        this->showFrame(COLS, LINES); 
+        int startY = (LINES - totalFields) / 2;
+        int centerX = (COLS - 45) / 2;
+        for(int i = 0; i < totalFields; ++i) {
+
+            
+            if (i == formIndex) {
+                attron(COLOR_PAIR(2) | A_REVERSE);
+                mvprintw(startY + i, centerX, " > %-20s [ %-20s ]", options[i].c_str(), this->concreteSelectInputs.at(i).c_str());
+                attroff(COLOR_PAIR(2) | A_REVERSE);
+            } else {
+                mvprintw(startY + i, centerX, "   %-20s [ %-20s ]", options[i].c_str(),  this->concreteSelectInputs.at(i).c_str());
+            }
+        }
+        int inputX = centerX + 26;
+        this->showDoneOption(); 
+        this->showBackOption(); 
+        refresh();
+        int ch = getch();
+        this->moveIndex(formIndex, ch, totalFields);
+         if (ch == 'b') {
+            break; 
+        }
+        if(ch == ' ') {
+            this->stop = true;
+            this->createSelectRule();
+            break;
+        }
+        if (ch == '\n' || ch == 10) {
+            move(startY + formIndex, inputX);
+            echo();
+            this->readInput();
+            this->concreteSelectInputs.at(formIndex) =  std::string(this->currentUserInput);
+            noecho();
+        }
+    }
+}
+
 void InteractiveCLIMode::showMenuLayout() {
     this->ruleIndex = this->lastSelectionIndex;
     switch (static_cast<MenuState>(this->lastSelectionIndex)) {
+        case InteractiveCLIMode::MenuState::SELECT:
+            this->showSelectMenu();
+            break;
         case InteractiveCLIMode::MenuState::MAIN:
         default:
             this->showMainMenu();

@@ -1,6 +1,7 @@
 #pragma  once
 #include "../../firewall-service/headers/Rules.h"
 #include "../../firewall-service/headers/FilterRule.h"
+#include <functional>
 #include <memory>
 #include <tuple>
 #include <ncurses.h>
@@ -10,15 +11,16 @@
 #define USER_INPUT_SIZE 255
 class InteractiveCLIMode {
 public:
-    enum class MenuState { MAIN=0, L2_FORM=1, L3_FORM=2, L4_SIMPLE_FORM=3, L4_TCP_FORM=4 };
+    enum class MenuState { MAIN=0, REDIRECT=1, SELECT=2, REMOVE=3, UPDRATE=4 };
     InteractiveCLIMode() {
         for (const auto& layer : concreteLayerOptions) {
-        std::vector<std::string> layerInputs;
-        for (size_t i = 0; i < layer.size(); ++i) {
-            layerInputs.push_back(""); 
+            std::vector<std::string> layerInputs;
+            for (size_t i = 0; i < layer.size(); ++i) {
+                layerInputs.push_back(""); 
+            }
+            concreteLayerInputs.push_back(layerInputs);
         }
-        concreteLayerInputs.push_back(layerInputs);
-    }
+        this->concreteSelectInputs.resize(this->selectConcreteOptions.size(),"");
     }
     void show();
     std::shared_ptr<FilterRule> getParsedFilterRule() { return this->parsedFilterRule; }
@@ -29,12 +31,15 @@ private:
     void showFrame(int w,int h);
     void showMenuLayout();
     void showMainMenu();
+    void showSelectMenu();
     void getSelectionIndex(int min,int max);
     void showBackOption();
     void showConcreteLayerOption();
     void showDoneOption();
     void createFirewallRule();
+    void createSelectRule();
     void showQuitOption();
+    void moveIndex(int& index,int ch,int max);
     bool stop = false;
     MenuState currentState;
     int selectionIndex = 0;
@@ -43,6 +48,7 @@ private:
     char currentUserInput[USER_INPUT_SIZE] = {0};
     std::vector<std::string> layerOptions = {"1. L2 (Ethernet)","2. L3 (IP)","3. L4 (Simple - UDP)","4. L4 (TCP)"};
     std::vector<std::string> selectionOptions = {"1. Firewall rule","2. Redirect rules","3. Select rules","4. Remove rules"};
+    std::vector<std::string> selectConcreteOptions = {"1. ID: ","2. From Memory: (y/n)","3. Layer: (LX)","3. Permit: (y/n)"};
 
     std::vector<std::vector<std::string>> concreteLayerOptions = {
         { "1. Source MAC: ", "2. Dest MAC: ", "3. Permit (y/n): ", "4. Limit: ","5. ID: " }, 
@@ -51,6 +57,32 @@ private:
         { "1. S-Port: ", "2. D-Port: ", "3. Flags: ", "4. Win Min: ", "5. Win Max: ", "6. Permit (y/n): ","5. ID: "  } 
     };
     std::vector<std::vector<std::string>> concreteLayerInputs;
-
+    std::vector<std::string> concreteSelectInputs;
     std::shared_ptr<FilterRule> parsedFilterRule = nullptr;
+
+    std::function<int(const std::string&,int)> safeStoi = [](const std::string& s, int defaultVal) {
+        try { return s.empty() ? defaultVal : std::stoi(s); }
+        catch (...) { return defaultVal; }
+    };
+
+    std::function<bool(const std::string&)> isPermit = [](const std::string& s) { return s == "y" || s == "Y"; };
+
+    std::function<void(std::tuple<std::string,int>&,const std::string&)> parseIP = [](std::tuple<std::string,int>& ipPref,const std::string& pref) {
+        if(pref.empty()) {
+             ipPref = std::make_tuple("none",-1);
+             return;
+        }
+        std::stringstream ss(pref);
+        std::string line;
+        std::string finalIP = "none";
+        int finalPref = -1;
+
+        std::getline(ss,line,'/');
+        finalIP = line;
+        std::getline(ss,line,'/');
+        finalPref = std::stoi(line);
+
+        ipPref = std::make_tuple(finalIP,finalPref);
+    };
+
 };

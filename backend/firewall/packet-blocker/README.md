@@ -19,3 +19,4 @@
 # Libraries (Linux):
 - sudo apt-get install nlohmann-json3-dev
 - sudo apt install libnetfilter-queue-dev libnfnetlink-dev
+- sudo apt-get install libncurses-dev
