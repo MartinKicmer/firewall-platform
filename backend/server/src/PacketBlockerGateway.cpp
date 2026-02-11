@@ -40,25 +40,32 @@ void PacketBlockerGateway::printRedirectedPackets(std::shared_ptr<WebSocketServi
                 currentPermit = params.permit;
             }
 
-            this->prActive = std::make_unique<boost::process::child>(
+            auto child = boost::process::child(
                 this->processPath,
-                "-l", currentLayer.c_str(),
+                "-l", currentLayer,
                 "-action", currentPermit ? "permit" : "deny",
                 "redirect", "all",
                 boost::process::std_out > outStream
             );
+            
+            this->prActive = std::make_unique<boost::process::child>(std::move(child));
 
             std::string line;
-            while (std::getline(outStream, line)) {
+            while (!this->restart && std::getline(outStream, line)) {
                 if (line.empty()) continue;
                 wsService->broadcastMSG(line);
             }
 
-            this->prActive->wait();
+            if (this->prActive && this->prActive->running()) {
+                this->prActive->terminate();
+                this->prActive->wait();
+            }
 
         } catch (const std::exception& e) {
-            std::cerr << "Error in stream loop: " << e.what() << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::cerr << "CRITICAL ERROR v printRedirectedPackets: " << e.what() << std::endl;
+            std::cerr << "Path to packet blocker: " << this->processPath << std::endl;
+            
+            std::this_thread::sleep_for(std::chrono::seconds(5));
         }
     }
 }

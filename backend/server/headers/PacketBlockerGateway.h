@@ -15,10 +15,13 @@ public:
         std::mutex mtx; 
     };
     void setStreamParams(const std::string& layer, bool permit) {
-        std::lock_guard<std::mutex> lock(params.mtx);
-        params.layer = layer;
-        params.permit = permit;
-        if(this->prActive->running()) {
+        {
+            std::lock_guard<std::mutex> lock(params.mtx);
+            params.layer = layer;
+            params.permit = permit;
+            this->restart = true;
+        }
+        if(this->prActive && this->prActive->running()) {
             this->prActive->terminate();
             this->prActive->wait();
         }
