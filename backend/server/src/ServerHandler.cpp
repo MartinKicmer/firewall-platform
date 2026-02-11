@@ -1,11 +1,33 @@
 #include "../headers/ServerHandler.h"
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <iostream>
+#include <pistache/http.h>
 #include <pistache/http_defs.h>
 #include <pistache/router.h>
 #include <stdexcept>
 #include <string>
+
+
+L4TCPRequest ServerHandler::parseL4TCPRequest(const Pistache::Rest::Request& request) {
+
+    auto j = nlohmann::json::parse(request.body());
+    L4TCPRequest req{};
+
+    if (!j.contains("ID")) throw std::runtime_error("Missing argument ID");
+
+    req.ID = j["ID"].get<int>();
+    if (j.contains("limitCount")) req.limitCount = j["limitCount"].get<int>();
+    if (j.contains("save"))       req.save = j["save"].get<bool>();
+    if (j.contains("sourcePort")) req.sPort = j["sourcePort"].get<int>();
+    if (j.contains("destPort"))   req.dPort = j["destPort"].get<int>(); 
+    if (j.contains("flags")) req.flags = j["flags"].get<uint8_t>();
+    if (j.contains("maxWin")) req.maxWindowSize = j["maxWin"].get<short>();
+    if (j.contains("minWin")) req.maxWindowSize = j["minWin"].get<short>();
+
+    return req;
+}
 
 
 void ServerHandler::onRequest(const Pistache::Http::Request& request, Pistache::Http::ResponseWriter response) {
@@ -143,7 +165,12 @@ void ServerHandler::createRule(const Pistache::Rest::Request& request, Pistache:
             L4SimpleRequest req = this->parseL4SimpleRequest(request);
             this->packetBlockerGateway->createL4simpleRule(req,permit);
         }
-    } catch (const std::exception& e) {
+        if(layer == "L4TCP") {
+            L4TCPRequest req = this->parseL4TCPRequest(request);
+            std::cout << "TCP request parsed\n";
+            this->packetBlockerGateway->createL4TCPRule(req, permit);
+        }
+     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         response.send(Pistache::Http::Code::Bad_Request);
         std::exit(EXIT_FAILURE);

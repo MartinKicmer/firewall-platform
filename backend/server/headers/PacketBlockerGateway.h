@@ -29,6 +29,7 @@ public:
     void createL2Rule(EthernetRequest req,bool permit);
     void createL3Rule(IPv4Request req,bool permit);
     void createL4simpleRule(L4SimpleRequest req,bool permit);
+    void createL4TCPRule(L4TCPRequest req,bool permit);
     nlohmann::json getSelectedRules(int ID,bool permit,const std::string& layer,bool fromMemory);
     void removeRule(int ID,const std::string& layer,bool fromMemory);
 

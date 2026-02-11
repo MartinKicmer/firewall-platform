@@ -32,6 +32,7 @@ public:
     EthernetRequest parseEthernetRequest(const Pistache::Rest::Request& request);
     IPv4Request parseIPv4Request(const Pistache::Rest::Request& request);
     L4SimpleRequest parseL4SimpleRequest(const Pistache::Rest::Request& request);
+    L4TCPRequest parseL4TCPRequest(const Pistache::Rest::Request& request);
 
 private:
     Pistache::Rest::Router router;

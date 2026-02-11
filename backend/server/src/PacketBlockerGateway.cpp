@@ -3,8 +3,31 @@
 #include <cstdlib>
 #include <exception>
 #include <memory>
+#include <netinet/tcp.h>
 #include <stdexcept>
 #include <string>
+
+
+void PacketBlockerGateway::createL4TCPRule(L4TCPRequest req,bool permit) {
+    std::string flag;
+    if(req.flags & TH_SYN) flag = "SYN";
+    if(req.flags & TH_FIN) flag = "FIN";
+    if(req.flags & TH_ACK) flag = "ACK";
+    try {
+        boost::process::child pr;
+        if(req.save) {
+             pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L4TCP","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort),"-save","-flag",flag,"-minWin",std::to_string(req.minWindowSize),"-maxWin",std::to_string(req.maxWindowSize));
+        } else {
+            pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
+        "-l","L4TCP","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort),"-flag",flag,"-minWin",std::to_string(req.minWindowSize),"-maxWin",std::to_string(req.maxWindowSize));
+        }
+        pr.wait();
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+}
 void PacketBlockerGateway::printRedirectedPackets(std::shared_ptr<WebSocketService> wsService) {
     while (true) {
         boost::process::ipstream outStream;
@@ -108,10 +131,10 @@ void PacketBlockerGateway::createL4simpleRule(L4SimpleRequest req,bool permit) {
         boost::process::child pr;
         if(req.save) {
              pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
-        "-l","L2","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort),"-save");
+        "-l","L4Simple","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort),"-save");
         } else {
             pr = boost::process::child(this->processPath,"-rid",std::to_string(req.ID),
-        "-l","L2","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort));
+        "-l","L4Simple","-action",permit ? "permit" : "deny","-sport",std::to_string(req.sPort),"-dport",std::to_string(req.dPort));
         }
         pr.wait();
     } catch (const std::exception& e) {
