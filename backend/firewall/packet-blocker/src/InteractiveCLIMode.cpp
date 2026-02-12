@@ -280,8 +280,6 @@ void InteractiveCLIMode::showSelectMenu() {
         int startY = (LINES - totalFields) / 2;
         int centerX = (COLS - 45) / 2;
         for(int i = 0; i < totalFields; ++i) {
-
-            
             if (i == formIndex) {
                 attron(COLOR_PAIR(2) | A_REVERSE);
                 mvprintw(startY + i, centerX, " > %-20s [ %-20s ]", options[i].c_str(), this->concreteSelectInputs.at(i).c_str());
@@ -314,9 +312,123 @@ void InteractiveCLIMode::showSelectMenu() {
     }
 }
 
+void InteractiveCLIMode::showRedirectMenu() {
+    int formIndex = 0; 
+    auto& options = this->redirectConcreteOptions;
+    int totalFields = options.size();
+
+    while(!this->stop) {
+        erase();
+        this->showFrame(COLS, LINES); 
+        int startY = (LINES - totalFields) / 2;
+        int centerX = (COLS - 45) / 2;
+        for(int i = 0; i < totalFields; ++i) {
+            if (i == formIndex) {
+                attron(COLOR_PAIR(2) | A_REVERSE);
+                mvprintw(startY + i, centerX, " > %-20s [ %-20s ]", options[i].c_str(), this->concreteRedirectInputs.at(i).c_str());
+                attroff(COLOR_PAIR(2) | A_REVERSE);
+            } else {
+                mvprintw(startY + i, centerX, "   %-20s [ %-20s ]", options[i].c_str(),  this->concreteRedirectInputs.at(i).c_str());
+            }
+        }
+        int inputX = centerX + 26;
+        this->showDoneOption(); 
+        this->showBackOption(); 
+        refresh();
+        int ch = getch();
+        this->moveIndex(formIndex, ch, totalFields);
+         if (ch == 'b') {
+            break; 
+        }
+        if(ch == ' ') {
+            this->stop = true;
+            this->createRedirectRule();
+            break;
+        }
+        if (ch == '\n' || ch == 10) {
+            move(startY + formIndex, inputX);
+            echo();
+            this->readInput();
+            this->redirectConcreteOptions.at(formIndex) =  std::string(this->currentUserInput);
+            noecho();
+        }
+    }
+}
+
+void InteractiveCLIMode::showRemoveMenu() {
+    int formIndex = 0; 
+    auto& options = this->removeConcreteOptions;
+    int totalFields = options.size();
+
+    while(!this->stop) {
+        erase();
+        this->showFrame(COLS, LINES); 
+        int startY = (LINES - totalFields) / 2;
+        int centerX = (COLS - 45) / 2;
+        for(int i = 0; i < totalFields; ++i) {
+            if (i == formIndex) {
+                attron(COLOR_PAIR(2) | A_REVERSE);
+                mvprintw(startY + i, centerX, " > %-20s [ %-20s ]", options[i].c_str(), this->concreteRemoveInputs.at(i).c_str());
+                attroff(COLOR_PAIR(2) | A_REVERSE);
+            } else {
+                mvprintw(startY + i, centerX, "   %-20s [ %-20s ]", options[i].c_str(),  this->concreteRemoveInputs.at(i).c_str());
+            }
+        }
+        int inputX = centerX + 26;
+        this->showDoneOption(); 
+        this->showBackOption(); 
+        refresh();
+        int ch = getch();
+        this->moveIndex(formIndex, ch, totalFields);
+         if (ch == 'b') {
+            break; 
+        }
+        if(ch == ' ') {
+            this->stop = true;
+            this->createRemoveRule();
+            break;
+        }
+        if (ch == '\n' || ch == 10) {
+            move(startY + formIndex, inputX);
+            echo();
+            this->readInput();
+            this->concreteRemoveInputs.at(formIndex) =  std::string(this->currentUserInput);
+            noecho();
+        }
+    }
+}
+
+
+void InteractiveCLIMode::createRemoveRule() {
+    int ID = this->safeStoi(this->concreteRemoveInputs.at(0),-1);
+    bool fromMemory = this->isPermit(this->concreteRemoveInputs.at(1));
+    std::string& layer = this->concreteRemoveInputs.at(2);
+
+    std::shared_ptr<RemoveRule> removeRule = std::make_shared<RemoveRule>(ID,fromMemory,layer);
+    this->parsedFilterRule = std::make_shared<FilterRule>(removeRule,ID);
+}
+
+
+void InteractiveCLIMode::createRedirectRule() {
+    bool permit = this->isPermit(this->concreteRedirectInputs.at(0));
+    std::string& layer = this->concreteRedirectInputs.at(1);
+    int count = this->safeStoi(this->concreteRedirectInputs.at(2),0);
+
+    std::shared_ptr<RedirectRule> redirectRule = std::make_shared<RedirectRule>(permit,layer,count);
+
+    this->parsedFilterRule = std::make_shared<FilterRule>(redirectRule,-1);
+
+}
+
 void InteractiveCLIMode::showMenuLayout() {
     this->ruleIndex = this->lastSelectionIndex;
     switch (static_cast<MenuState>(this->lastSelectionIndex)) {
+        case InteractiveCLIMode::MenuState::REDIRECT:
+            this->showRedirectMenu();
+            break;
+        case InteractiveCLIMode::MenuState::REMOVE:
+            this->showRemoveMenu();
+            break;
         case InteractiveCLIMode::MenuState::SELECT:
             this->showSelectMenu();
             break;

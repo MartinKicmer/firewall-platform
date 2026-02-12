@@ -21,6 +21,8 @@ public:
             concreteLayerInputs.push_back(layerInputs);
         }
         this->concreteSelectInputs.resize(this->selectConcreteOptions.size(),"");
+        this->concreteRemoveInputs.resize(this->removeConcreteOptions.size(),"");
+        this->concreteRedirectInputs.resize(this->redirectConcreteOptions.size(),"");
     }
     void show();
     std::shared_ptr<FilterRule> getParsedFilterRule() { return this->parsedFilterRule; }
@@ -32,12 +34,16 @@ private:
     void showMenuLayout();
     void showMainMenu();
     void showSelectMenu();
+    void showRemoveMenu();
+    void showRedirectMenu();
     void getSelectionIndex(int min,int max);
     void showBackOption();
     void showConcreteLayerOption();
     void showDoneOption();
     void createFirewallRule();
     void createSelectRule();
+    void createRemoveRule();
+    void createRedirectRule();
     void showQuitOption();
     void moveIndex(int& index,int ch,int max);
     bool stop = false;
@@ -49,7 +55,8 @@ private:
     std::vector<std::string> layerOptions = {"1. L2 (Ethernet)","2. L3 (IP)","3. L4 (Simple - UDP)","4. L4 (TCP)"};
     std::vector<std::string> selectionOptions = {"1. Firewall rule","2. Redirect rules","3. Select rules","4. Remove rules"};
     std::vector<std::string> selectConcreteOptions = {"1. ID: ","2. From Memory: (y/n)","3. Layer: (LX)","3. Permit: (y/n)"};
-
+    std::vector<std::string> removeConcreteOptions = {"1. ID: ","2. From Memory: (y/n)","3. Layer: (LX)"};
+    std::vector<std::string> redirectConcreteOptions = {"1. Permit: ","2. Layer: (LX)","3. Count: (all)"};
     std::vector<std::vector<std::string>> concreteLayerOptions = {
         { "1. Source MAC: ", "2. Dest MAC: ", "3. Permit (y/n): ", "4. Limit: ","5. ID: " }, 
         { "1. Source IP: ", "2. Dest IP: ", "3. TTL Min: ", "4. TTL Max: ", "5. Protocol: ", "6. Permit (y/n): ","5. ID: "  }, 
@@ -58,6 +65,8 @@ private:
     };
     std::vector<std::vector<std::string>> concreteLayerInputs;
     std::vector<std::string> concreteSelectInputs;
+    std::vector<std::string> concreteRemoveInputs;
+    std::vector<std::string> concreteRedirectInputs;
     std::shared_ptr<FilterRule> parsedFilterRule = nullptr;
 
     std::function<int(const std::string&,int)> safeStoi = [](const std::string& s, int defaultVal) {
