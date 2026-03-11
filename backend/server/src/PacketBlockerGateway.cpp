@@ -113,7 +113,7 @@ nlohmann::json PacketBlockerGateway::getSelectedRules(int ID,bool permit,const s
     try {
         boost::process::ipstream outStream;
         boost::process::child pr(this->processPath,"select","-rid",std::to_string(ID),"-l",layer,"-action",permit ? "permit" : "deny",
-        "-memory",std::to_string(fromMemory),boost::process::std_out > outStream);
+        "-memory",fromMemory ? "true" : "false",boost::process::std_out > outStream);
         std::string line;
         std::string fullJSON;
         while (std::getline(outStream, line)) {

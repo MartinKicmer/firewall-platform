@@ -38,19 +38,20 @@ void ServerHandler::setupRestRoutes() {
     Pistache::Rest::Routes::Get(this->router, "/fireWall/redirect/:action",Pistache::Rest::Routes::bind(&ServerHandler::getLastPDUs, this));
     Pistache::Rest::Routes::Post(this->router, "/fireWall/createRule/:action",Pistache::Rest::Routes::bind(&ServerHandler::createRule, this));
     Pistache::Rest::Routes::Get(this->router, "/fireWall/selectRule/:action",Pistache::Rest::Routes::bind(&ServerHandler::selectRule, this));
+    Pistache::Rest::Routes::Options(router, "/fireWall/selectRule/:action", Pistache::Rest::Routes::bind(&ServerHandler::selectRule, this));
     Pistache::Rest::Routes::Delete(this->router, "/fireWall/deleteRule",Pistache::Rest::Routes::bind(&ServerHandler::deleteRule, this));
     std::cout << "All routes setup\n";
 }
 
 void ServerHandler::deleteRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
     auto query = request.query();
-    
+    setupCors(response);
     try {
         if(!query.has("ID") || !query.has("layer") || !query.has("fromMemory")) {
             response.send(Pistache::Http::Code::Bad_Request, "Missing arguments");
             return;
         }
-
+	
         int ID = std::stoi(query.get("ID").value());
         std::string layer = query.get("layer").value();
         bool fromMemory = (query.get("fromMemory").value() == "1");
@@ -69,7 +70,6 @@ EthernetRequest ServerHandler::parseEthernetRequest(const Pistache::Rest::Reques
     EthernetRequest req;
 
     if (!j.contains("ID")) throw std::runtime_error("Missing argument ID");
-    
     req.ID = j["ID"].get<int>();
     if (j.contains("limitCount")) req.limitCount = j["limitCount"].get<int>();
     if (j.contains("save"))       req.save = j["save"].get<bool>(); 
@@ -119,11 +119,27 @@ L4SimpleRequest ServerHandler::parseL4SimpleRequest(const Pistache::Rest::Reques
     return req;
 }
 
+
+
+void ServerHandler::setupCors(Pistache::Http::ResponseWriter& response) {
+    auto headers = response.headers();
+    headers.add<Pistache::Http::Header::AccessControlAllowOrigin>("*");
+    headers.add<Pistache::Http::Header::AccessControlAllowMethods>("GET, POST, OPTIONS, PUT, DELETE");
+    headers.add<Pistache::Http::Header::AccessControlAllowHeaders>("Origin, X-Requested-With, Content-Type, Accept, Authorization");
+}
+
+
+
+
 void ServerHandler::selectRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response) {
+    setupCors(response);
+    if (request.method() == Pistache::Http::Method::Options) {
+        response.send(Pistache::Http::Code::Ok);
+        return;
+    }
     std::string permitStr = request.param(":action").as<std::string>();
     bool permit = (permitStr == "1" || permitStr == "true");
     auto query = request.query();
-
     if(!query.has("ID") || !query.has("layer") || !query.has("fromMemory") ) {
         response.send(Pistache::Http::Code::Bad_Request,"Missing arguments layer or ID or fromMemory");
         return;
@@ -142,6 +158,7 @@ void ServerHandler::createRule(const Pistache::Rest::Request& request, Pistache:
     std::string permitStr = request.param(":action").as<std::string>();
     bool permit = (permitStr == "1" || permitStr == "true");
     std::string body = request.body();
+    setupCors(response);
     if(body.empty()) {
         response.send(Pistache::Http::Code::Bad_Request,"Missing arguments for creating a rule\n");
         return;
@@ -183,8 +200,8 @@ void ServerHandler::getLastPDUs(const Pistache::Rest::Request& request, Pistache
     try {
         bool permit = request.param(":action").as<bool>();
         auto query = request.query();
+	setupCors(response);
         if(!query.has("count") || !query.has("layer")) response.send(Pistache::Http::Code::Bad_Request);
-
         int count = std::stoi(query.get("count").value());
         std::string layer = query.get("layer").value();
         

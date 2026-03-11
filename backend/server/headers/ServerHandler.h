@@ -20,6 +20,7 @@ public:
     }
     void onRequest(const Pistache::Http::Request& request, Pistache::Http::ResponseWriter response) override;
     void setupRestRoutes();
+    void setupCors(Pistache::Http::ResponseWriter& response);
     void getLastPDUs(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response);
     void createRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response);
     void selectRule(const Pistache::Rest::Request& request, Pistache::Http::ResponseWriter response);
