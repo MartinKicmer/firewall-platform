@@ -1,5 +1,40 @@
 <script setup>
 import { Shield, LayoutDashboard, ScrollText } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+
+const data = ref(null)
+const isLoading = ref(false)
+const error = ref(null)
+
+const fetchData = async () => {
+    isLoading.value = true
+    error.value = null
+    
+    try {
+        const response = await fetch('http://172.20.10.12:8081/fireWall/selectRule/0?ID=12&layer=L4Simple&fromMemory=1', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+        
+        if (response.ok) {
+            data.value = await response.json()
+            console.log(data.value);
+        } else {
+            error.value = `Chyba serveru: ${response.status}`
+        }
+    } catch (e) {
+        error.value = "Nelze se spojit s bránou. Zkontrolujte připojení k síti."
+        console.error("Network error:", e)
+    } finally {
+        isLoading.value = false
+    }
+}
+onMounted(fetchData);
+
+
 </script>
 
 <template>
@@ -54,7 +89,11 @@ import { Shield, LayoutDashboard, ScrollText } from 'lucide-vue-next'
       </header>
 
       <main class="p-6">
-        <router-view />
+          <ul>
+            <li v-for="rule in data" :key="rule.id">
+              ID: {{ rule.ID }} | Protokol: {{ rule.ruleType }} | Akce: {{ rule.action }}
+            </li>
+          </ul>
       </main>
     </div>
   </div>
