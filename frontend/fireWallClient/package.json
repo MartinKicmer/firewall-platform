@@ -15,6 +15,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "axios": "^1.13.6",
     "lucide-vue-next": "^0.575.0",
     "vue": "^3.5.27",
     "vue-router": "^5.0.1"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Shield, LayoutDashboard, ScrollText } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
+import api from '@/api/axios'
 
 type RuleData = {
   permit?: boolean
@@ -8,12 +9,18 @@ type RuleData = {
   dest?: [string, number]
   destPort?: number
   sourcePort?: number
-  protocol?: number
-  minTTL?: number
-  maxTTL?: number
-  TOS?: number
+  protocol?: string
+  ttlMin?: number
+  ttlMax?: number
+  tos?: number
   allowFrag?: boolean
   limitCount?: number
+  tcpFlags?: number
+  flags?: number
+  minWindowsize?: number
+  maxWindowsize?: number
+  minWin?: number
+  maxWin?: number
 }
 
 type FirewallRule = {
@@ -22,6 +29,18 @@ type FirewallRule = {
   save?: boolean
   update?: boolean
   data?: RuleData
+}
+
+type CreateL4TCPRulePayload = {
+  ID: number
+  layer: 'L4TCP'
+  save: boolean
+  sourcePort: number
+  destPort: number
+  flags: number
+  minWin: number
+  maxWin: number
+  limitCount: number
 }
 
 const data = ref<FirewallRule[]>([])
@@ -33,47 +52,54 @@ const submitMessage = ref<string | null>(null)
 const submitError = ref<string | null>(null)
 
 const form = ref({
-  ID: 10,
+  ID: 1,
   permit: false,
-  sourceIp: '192.168.88.77',
-  sourceMask: 24,
-  destIp: 'none',
-  destMask: -1,
-  protocol: -1,
-  minTTL: -1,
-  maxTTL: -1,
-  TOS: -1,
-  allowFrag: true,
+  sourcePort: 444,
+  destPort: -1,
+  flags: 0,
+  minWin: -1,
+  maxWin: -1,
+  limitCount: 1,
   save: false,
-  update: false,
 })
+
+const buildL4TCPPayload = (): CreateL4TCPRulePayload => {
+  return {
+    ID: form.value.ID,
+    layer: 'L4TCP',
+    save: form.value.save,
+    sourcePort: form.value.sourcePort,
+    destPort: form.value.destPort,
+    flags: form.value.flags,
+    minWin: form.value.minWin,
+    maxWin: form.value.maxWin,
+    limitCount: form.value.limitCount,
+  }
+}
 
 const fetchRules = async () => {
   isLoading.value = true
   error.value = null
 
   try {
-    const response = await fetch(
-      'http://192.168.50.1:8080/fireWall/selectRule/0?ID=1&layer=L4Simple&fromMemory=1',
-      {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      }
-    )
+    const action = form.value.permit ? 1 : 0
 
-    if (!response.ok) {
-      error.value = `Chyba serveru: ${response.status}`
-      return
-    }
+    const response = await api.get(`/fireWall/selectRule/${action}`, {
+      params: {
+        ID: form.value.ID,
+        layer: 'L4TCP',
+        fromMemory: 1,
+      },
+    })
 
-    const result = await response.json()
-    data.value = result
-    console.log('Firewall rules:', result)
-  } catch (e) {
-    error.value = 'Nelze se spojit s bránou. Zkontrolujte připojení k síti.'
+    data.value = response.data
+    console.log('Firewall rules:', response.data)
+  } catch (e: any) {
+    error.value =
+      e.response?.status != null
+        ? `Chyba serveru: ${e.response.status}`
+        : 'Nelze se spojit s bránou. Zkontrolujte připojení k síti.'
+
     console.error('Network error:', e)
   } finally {
     isLoading.value = false
@@ -85,31 +111,25 @@ const submitRule = async () => {
   submitMessage.value = null
   submitError.value = null
 
-  const payload = buildL3Payload()
+  const payload = buildL4TCPPayload()
+  const action = form.value.permit ? 1 : 0
 
   try {
-    const response = await fetch('http://192.168.50.1:8080/fireWall/addRule', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
+    const response = await api.post(`/fireWall/createRule/${action}`, payload)
 
-    const text = await response.text()
     console.log('POST payload:', payload)
-    console.log('POST response:', text)
+    console.log('POST response:', response.data)
 
-    if (!response.ok) {
-      submitError.value = `Chyba při odeslání: ${response.status} ${text}`
-      return
-    }
-
-    submitMessage.value = 'Pravidlo bylo úspěšně odesláno na server.'
+    submitMessage.value = 'L4TCP pravidlo bylo úspěšně odesláno na server.'
     await fetchRules()
-  } catch (e) {
-    submitError.value = 'Nepodařilo se odeslat pravidlo na server.'
+  } catch (e: any) {
+    const status = e.response?.status
+    const responseData = e.response?.data
+
+    submitError.value = status
+      ? `Chyba při odeslání: ${status}${responseData ? ` ${typeof responseData === 'string' ? responseData : JSON.stringify(responseData)}` : ''}`
+      : 'Nepodařilo se odeslat pravidlo na server.'
+
     console.error('Submit error:', e)
   } finally {
     isSubmitting.value = false
@@ -120,11 +140,14 @@ const formatAction = (rule: FirewallRule) => {
   return rule.data?.permit === true ? 'ALLOW' : 'DENY'
 }
 
-const formatAddress = (address?: [string, number]) => {
-  if (Array.isArray(address) && address.length >= 2) {
-    return `${address[0]}/${address[1]}`
-  }
-  return '-'
+const formatFlags = (rule: FirewallRule) => {
+  return rule.data?.tcpFlags ?? rule.data?.flags ?? '-'
+}
+
+const formatWindow = (rule: FirewallRule) => {
+  const min = rule.data?.minWindowsize ?? rule.data?.minWin ?? -1
+  const max = rule.data?.maxWindowsize ?? rule.data?.maxWin ?? -1
+  return `${min} / ${max}`
 }
 
 onMounted(fetchRules)
@@ -187,7 +210,7 @@ onMounted(fetchRules)
 
       <main class="p-6 space-y-6">
         <section class="rounded-xl border border-border bg-card p-6">
-          <h2 class="text-base font-semibold mb-4">Vytvořit L3 pravidlo</h2>
+          <h2 class="text-base font-semibold mb-4">Vytvořit L4TCP pravidlo</h2>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -211,78 +234,66 @@ onMounted(fetchRules)
             </div>
 
             <div>
-              <label class="block text-sm mb-1">Source IP</label>
+              <label class="block text-sm mb-1">Source port</label>
               <input
-                v-model="form.sourceIp"
-                type="text"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-                placeholder="192.168.88.77"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">Source maska</label>
-              <input
-                v-model.number="form.sourceMask"
+                v-model.number="form.sourcePort"
                 type="number"
                 class="w-full rounded-lg border border-border bg-background px-3 py-2"
               />
             </div>
 
             <div>
-              <label class="block text-sm mb-1">Destination IP</label>
+              <label class="block text-sm mb-1">Destination port</label>
               <input
-                v-model="form.destIp"
-                type="text"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-                placeholder="none"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">Destination maska</label>
-              <input
-                v-model.number="form.destMask"
+                v-model.number="form.destPort"
                 type="number"
                 class="w-full rounded-lg border border-border bg-background px-3 py-2"
               />
             </div>
 
             <div>
-              <label class="block text-sm mb-1">Protocol</label>
+              <label class="block text-sm mb-1">TCP flags</label>
               <input
-                v-model.number="form.protocol"
+                v-model.number="form.flags"
+                type="number"
+                class="w-full rounded-lg border border-border bg-background px-3 py-2"
+                placeholder="např. 0"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm mb-1">Limit count</label>
+              <input
+                v-model.number="form.limitCount"
                 type="number"
                 class="w-full rounded-lg border border-border bg-background px-3 py-2"
               />
             </div>
 
             <div>
-              <label class="block text-sm mb-1">TOS</label>
+              <label class="block text-sm mb-1">Min window size</label>
               <input
-                v-model.number="form.TOS"
+                v-model.number="form.minWin"
                 type="number"
                 class="w-full rounded-lg border border-border bg-background px-3 py-2"
               />
             </div>
 
             <div>
-              <label class="block text-sm mb-1">Min TTL</label>
+              <label class="block text-sm mb-1">Max window size</label>
               <input
-                v-model.number="form.minTTL"
+                v-model.number="form.maxWin"
                 type="number"
                 class="w-full rounded-lg border border-border bg-background px-3 py-2"
               />
             </div>
+          </div>
 
-            <div>
-              <label class="block text-sm mb-1">Max TTL</label>
-              <input
-                v-model.number="form.maxTTL"
-                type="number"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-              />
-            </div>
+          <div class="mt-4 flex flex-wrap items-center gap-4">
+            <label class="flex items-center gap-2 text-sm">
+              <input v-model="form.save" type="checkbox" />
+              <span>Uložit pravidlo</span>
+            </label>
           </div>
 
           <div class="mt-4 flex items-center gap-3">
@@ -292,6 +303,14 @@ onMounted(fetchRules)
               class="rounded-lg px-4 py-2 text-sm font-medium border border-border bg-sidebar-accent hover:opacity-90 disabled:opacity-50"
             >
               {{ isSubmitting ? 'Odesílám...' : 'Poslat na server' }}
+            </button>
+
+            <button
+              @click="fetchRules"
+              :disabled="isLoading"
+              class="rounded-lg px-4 py-2 text-sm font-medium border border-border hover:opacity-90 disabled:opacity-50"
+            >
+              Obnovit pravidla
             </button>
 
             <span v-if="submitMessage" class="text-sm text-green-600">
@@ -322,9 +341,11 @@ onMounted(fetchRules)
                 <th class="text-left px-4 py-3">ID</th>
                 <th class="text-left px-4 py-3">Typ pravidla</th>
                 <th class="text-left px-4 py-3">Akce</th>
-                <th class="text-left px-4 py-3">Zdroj</th>
-                <th class="text-left px-4 py-3">Cíl</th>
-                <th class="text-left px-4 py-3">Port</th>
+                <th class="text-left px-4 py-3">Source port</th>
+                <th class="text-left px-4 py-3">Destination port</th>
+                <th class="text-left px-4 py-3">Flags</th>
+                <th class="text-left px-4 py-3">Window</th>
+                <th class="text-left px-4 py-3">Limit</th>
               </tr>
             </thead>
 
@@ -337,13 +358,15 @@ onMounted(fetchRules)
                 <td class="px-4 py-3">{{ rule.ID }}</td>
                 <td class="px-4 py-3">{{ rule.ruleType ?? '-' }}</td>
                 <td class="px-4 py-3">{{ formatAction(rule) }}</td>
-                <td class="px-4 py-3">{{ formatAddress(rule.data?.source) }}</td>
-                <td class="px-4 py-3">{{ formatAddress(rule.data?.dest) }}</td>
-                <td class="px-4 py-3">{{ rule.data?.destPort ?? rule.data?.sourcePort ?? '-' }}</td>
+                <td class="px-4 py-3">{{ rule.data?.sourcePort ?? '-' }}</td>
+                <td class="px-4 py-3">{{ rule.data?.destPort ?? '-' }}</td>
+                <td class="px-4 py-3">{{ formatFlags(rule) }}</td>
+                <td class="px-4 py-3">{{ formatWindow(rule) }}</td>
+                <td class="px-4 py-3">{{ rule.data?.limitCount ?? '-' }}</td>
               </tr>
 
               <tr v-if="data.length === 0">
-                <td colspan="6" class="px-4 py-6 text-center text-muted-foreground">
+                <td colspan="8" class="px-4 py-6 text-center text-muted-foreground">
                   Žádná pravidla nebyla nalezena.
                 </td>
               </tr>
