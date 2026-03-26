@@ -1,154 +1,178 @@
 <script setup lang="ts">
 import { Shield, LayoutDashboard, ScrollText } from 'lucide-vue-next'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import api from '@/api/axios'
+import L4TCPRuleForm from '@/components/L4TCPForm.vue'
+import L2RuleForm from './L2RuleForm.vue'
+import L3RuleForm from './L3RuleForm.vue'
+import L4SimpleRuleForm from './L4SimpleRuleForm.vue'
 
-type RuleData = {
-  permit?: boolean
-  source?: [string, number]
-  dest?: [string, number]
-  destPort?: number
-  sourcePort?: number
-  protocol?: string
-  ttlMin?: number
-  ttlMax?: number
-  tos?: number
-  allowFrag?: boolean
-  limitCount?: number
-  tcpFlags?: number
-  flags?: number
-  minWindowsize?: number
-  maxWindowsize?: number
-  minWin?: number
-  maxWin?: number
+import type { FirewallRule, RuleLayer } from '@/types/firewall'
+
+type SubmitEvent = {
+  action: number
+  payload: Record<string, unknown>
 }
 
-type FirewallRule = {
-  ID: number
-  ruleType: string
-  save?: boolean
-  update?: boolean
-  data?: RuleData
-}
+const selectedLayer = ref<RuleLayer>('L4TCP')
+const selectedPermit = ref(0)
+const selectedStorage = ref<0 | 1>(1) // 1 = paměť, 0 = databáze
 
-type CreateL4TCPRulePayload = {
-  ID: number
-  layer: 'L4TCP'
-  save: boolean
-  sourcePort: number
-  destPort: number
-  flags: number
-  minWin: number
-  maxWin: number
-  limitCount: number
-}
-
-const data = ref<FirewallRule[]>([])
+const rules = ref<FirewallRule[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
-
-const isSubmitting = ref(false)
 const submitMessage = ref<string | null>(null)
 const submitError = ref<string | null>(null)
-
-const form = ref({
-  ID: 1,
-  permit: false,
-  sourcePort: 444,
-  destPort: -1,
-  flags: 0,
-  minWin: -1,
-  maxWin: -1,
-  limitCount: 1,
-  save: false,
-})
-
-const buildL4TCPPayload = (): CreateL4TCPRulePayload => {
-  return {
-    ID: form.value.ID,
-    layer: 'L4TCP',
-    save: form.value.save,
-    sourcePort: form.value.sourcePort,
-    destPort: form.value.destPort,
-    flags: form.value.flags,
-    minWin: form.value.minWin,
-    maxWin: form.value.maxWin,
-    limitCount: form.value.limitCount,
-  }
-}
+const isDeletingAll = ref(false)
 
 const fetchRules = async () => {
   isLoading.value = true
   error.value = null
 
   try {
-    const action = form.value.permit ? 1 : 0
-
-    const response = await api.get(`/fireWall/selectRule/${action}`, {
+    const response = await api.get(`/fireWall/selectRule/${selectedPermit.value}`, {
       params: {
-        ID: form.value.ID,
-        layer: 'L4TCP',
-        fromMemory: 1,
+        ID: 1,
+        layer: selectedLayer.value,
+        fromMemory: selectedStorage.value,
       },
     })
 
-    data.value = response.data
-    console.log('Firewall rules:', response.data)
+    rules.value = response.data
   } catch (e: any) {
     error.value =
       e.response?.status != null
         ? `Chyba serveru: ${e.response.status}`
-        : 'Nelze se spojit s bránou. Zkontrolujte připojení k síti.'
-
-    console.error('Network error:', e)
+        : 'Nepodařilo se načíst pravidla.'
   } finally {
     isLoading.value = false
   }
 }
 
-const submitRule = async () => {
-  isSubmitting.value = true
+const submitRule = async ({ action, payload }: SubmitEvent) => {
   submitMessage.value = null
   submitError.value = null
 
-  const payload = buildL4TCPPayload()
-  const action = form.value.permit ? 1 : 0
-
   try {
-    const response = await api.post(`/fireWall/createRule/${action}`, payload)
-
-    console.log('POST payload:', payload)
-    console.log('POST response:', response.data)
-
-    submitMessage.value = 'L4TCP pravidlo bylo úspěšně odesláno na server.'
+    await api.post(`/fireWall/createRule/${action}`, payload)
+    submitMessage.value = 'Pravidlo bylo úspěšně odesláno.'
+    selectedPermit.value = action
     await fetchRules()
   } catch (e: any) {
-    const status = e.response?.status
-    const responseData = e.response?.data
+    if (e.response) {
+      submitError.value = `Chyba při odeslání: ${e.response.status}`
+    } else {
+      submitError.value = 'Nepodařilo se odeslat pravidlo na server.'
+    }
+  }
+}
 
-    submitError.value = status
-      ? `Chyba při odeslání: ${status}${responseData ? ` ${typeof responseData === 'string' ? responseData : JSON.stringify(responseData)}` : ''}`
-      : 'Nepodařilo se odeslat pravidlo na server.'
+const deleteRule = async (id: number, fromMemory = selectedStorage.value) => {
+  submitMessage.value = null
+  submitError.value = null
 
-    console.error('Submit error:', e)
+  try {
+    await api.delete('/fireWall/deleteRule', {
+      params: {
+        ID: id,
+        layer: selectedLayer.value,
+        fromMemory,
+      },
+    })
+
+    submitMessage.value =
+      fromMemory === 1
+        ? `Pravidlo ${id} bylo smazáno z paměti.`
+        : `Pravidlo ${id} bylo smazáno z databáze.`
+
+    await fetchRules()
+  } catch (e: any) {
+    submitError.value =
+      e.response?.status != null
+        ? `Chyba při mazání: ${e.response.status}`
+        : 'Nepodařilo se smazat pravidlo.'
+  }
+}
+
+const deleteAllRulesFromDatabase = async () => {
+  submitMessage.value = null
+  submitError.value = null
+
+  if (rules.value.length === 0) {
+    submitError.value = 'Nejsou žádná databázová pravidla ke smazání.'
+    return
+  }
+
+  const confirmed = window.confirm(
+    `Opravdu chceš smazat všech ${rules.value.length} pravidel z databáze?`
+  )
+
+  if (!confirmed) return
+
+  isDeletingAll.value = true
+
+  try {
+    for (const rule of rules.value) {
+      await api.delete('/fireWall/deleteRule', {
+        params: {
+          ID: rule.ID,
+          layer: selectedLayer.value,
+          fromMemory: 0,
+        },
+      })
+    }
+
+    submitMessage.value = 'Všechna pravidla byla smazána z databáze.'
+    await fetchRules()
+  } catch (e: any) {
+    submitError.value =
+      e.response?.status != null
+        ? `Chyba při mazání všech pravidel: ${e.response.status}`
+        : 'Nepodařilo se smazat všechna pravidla z databáze.'
   } finally {
-    isSubmitting.value = false
+    isDeletingAll.value = false
   }
 }
 
 const formatAction = (rule: FirewallRule) => {
-  return rule.data?.permit === true ? 'ALLOW' : 'DENY'
+  const permit = (rule as any)?.data?.permit
+  return permit === true ? 'ALLOW' : 'DENY'
 }
 
-const formatFlags = (rule: FirewallRule) => {
-  return rule.data?.tcpFlags ?? rule.data?.flags ?? '-'
+const formatAddress = (address?: [string, number]) => {
+  if (Array.isArray(address) && address.length >= 2) {
+    return `${address[0]}/${address[1]}`
+  }
+  return '-'
 }
 
-const formatWindow = (rule: FirewallRule) => {
-  const min = rule.data?.minWindowsize ?? rule.data?.minWin ?? -1
-  const max = rule.data?.maxWindowsize ?? rule.data?.maxWin ?? -1
-  return `${min} / ${max}`
+const formatRuleDetail = (rule: FirewallRule) => {
+  const data = (rule as any).data
+
+  if (!data) return '-'
+
+  if (rule.ruleType === 'L2') {
+    return `${data.sourceMAC ?? '-'} → ${data.destMAC ?? '-'}`
+  }
+
+  if (rule.ruleType === 'L3') {
+    return `${formatAddress(data.source)} → ${formatAddress(data.dest)}`
+  }
+
+  if (rule.ruleType === 'L4Simple') {
+    return `${data.sourcePort ?? '-'} → ${data.destPort ?? '-'}`
+  }
+
+  if (rule.ruleType === 'L4TCP') {
+    return `SP: ${data.sourcePort ?? '-'}, DP: ${data.destPort ?? '-'}, Flags: ${data.tcpFlags ?? data.flags ?? '-'}`
+  }
+
+  return '-'
 }
+
+watch([selectedLayer, selectedStorage], () => {
+  fetchRules()
+})
 
 onMounted(fetchRules)
 </script>
@@ -210,107 +234,62 @@ onMounted(fetchRules)
 
       <main class="p-6 space-y-6">
         <section class="rounded-xl border border-border bg-card p-6">
-          <h2 class="text-base font-semibold mb-4">Vytvořit L4TCP pravidlo</h2>
+          <h2 class="text-base font-semibold mb-4">Vytvořit pravidlo</h2>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label class="block text-sm mb-1">ID</label>
-              <input
-                v-model.number="form.ID"
-                type="number"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">Akce</label>
+              <label class="block text-sm mb-1">Typ pravidla</label>
               <select
-                v-model="form.permit"
+                v-model="selectedLayer"
                 class="w-full rounded-lg border border-border bg-background px-3 py-2"
               >
-                <option :value="true">ALLOW</option>
-                <option :value="false">DENY</option>
+                <option value="L2">L2</option>
+                <option value="L3">L3</option>
+                <option value="L4Simple">L4Simple</option>
+                <option value="L4TCP">L4TCP</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-sm mb-1">Source port</label>
-              <input
-                v-model.number="form.sourcePort"
-                type="number"
+              <label class="block text-sm mb-1">Zdroj pravidel</label>
+              <select
+                v-model="selectedStorage"
                 class="w-full rounded-lg border border-border bg-background px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">Destination port</label>
-              <input
-                v-model.number="form.destPort"
-                type="number"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">TCP flags</label>
-              <input
-                v-model.number="form.flags"
-                type="number"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-                placeholder="např. 0"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">Limit count</label>
-              <input
-                v-model.number="form.limitCount"
-                type="number"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">Min window size</label>
-              <input
-                v-model.number="form.minWin"
-                type="number"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm mb-1">Max window size</label>
-              <input
-                v-model.number="form.maxWin"
-                type="number"
-                class="w-full rounded-lg border border-border bg-background px-3 py-2"
-              />
+              >
+                <option :value="1">Paměť</option>
+                <option :value="0">Databáze</option>
+              </select>
             </div>
           </div>
 
-          <div class="mt-4 flex flex-wrap items-center gap-4">
-            <label class="flex items-center gap-2 text-sm">
-              <input v-model="form.save" type="checkbox" />
-              <span>Uložit pravidlo</span>
-            </label>
-          </div>
+          <L2RuleForm
+            v-if="selectedLayer === 'L2'"
+            @submit="submitRule"
+          />
 
-          <div class="mt-4 flex items-center gap-3">
-            <button
-              @click="submitRule"
-              :disabled="isSubmitting"
-              class="rounded-lg px-4 py-2 text-sm font-medium border border-border bg-sidebar-accent hover:opacity-90 disabled:opacity-50"
-            >
-              {{ isSubmitting ? 'Odesílám...' : 'Poslat na server' }}
-            </button>
+          <L3RuleForm
+            v-else-if="selectedLayer === 'L3'"
+            @submit="submitRule"
+          />
 
+          <L4SimpleRuleForm
+            v-else-if="selectedLayer === 'L4Simple'"
+            @submit="submitRule"
+          />
+
+          <L4TCPRuleForm
+            v-else-if="selectedLayer === 'L4TCP'"
+            @submit="submitRule"
+          />
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
             <button
-              @click="fetchRules"
-              :disabled="isLoading"
-              class="rounded-lg px-4 py-2 text-sm font-medium border border-border hover:opacity-90 disabled:opacity-50"
+              v-if="selectedStorage === 0"
+              @click="deleteAllRulesFromDatabase"
+              :disabled="isDeletingAll || rules.length === 0"
+              class="rounded-lg px-4 py-2 text-sm font-medium border border-red-500/20 text-red-500 hover:bg-red-500/10 disabled:opacity-50"
             >
-              Obnovit pravidla
+              {{ isDeletingAll ? 'Mažu...' : 'Smazat všechna pravidla z databáze' }}
             </button>
 
             <span v-if="submitMessage" class="text-sm text-green-600">
@@ -341,32 +320,37 @@ onMounted(fetchRules)
                 <th class="text-left px-4 py-3">ID</th>
                 <th class="text-left px-4 py-3">Typ pravidla</th>
                 <th class="text-left px-4 py-3">Akce</th>
-                <th class="text-left px-4 py-3">Source port</th>
-                <th class="text-left px-4 py-3">Destination port</th>
-                <th class="text-left px-4 py-3">Flags</th>
-                <th class="text-left px-4 py-3">Window</th>
-                <th class="text-left px-4 py-3">Limit</th>
+                <th class="text-left px-4 py-3">Detail</th>
+                <th class="text-left px-4 py-3">Save</th>
+                <th class="text-left px-4 py-3">Update</th>
+                <th class="text-left px-4 py-3">Mazání</th>
               </tr>
             </thead>
 
             <tbody>
               <tr
-                v-for="rule in data"
+                v-for="rule in rules"
                 :key="rule.ID"
                 class="border-b border-border last:border-b-0"
               >
                 <td class="px-4 py-3">{{ rule.ID }}</td>
-                <td class="px-4 py-3">{{ rule.ruleType ?? '-' }}</td>
+                <td class="px-4 py-3">{{ rule.ruleType }}</td>
                 <td class="px-4 py-3">{{ formatAction(rule) }}</td>
-                <td class="px-4 py-3">{{ rule.data?.sourcePort ?? '-' }}</td>
-                <td class="px-4 py-3">{{ rule.data?.destPort ?? '-' }}</td>
-                <td class="px-4 py-3">{{ formatFlags(rule) }}</td>
-                <td class="px-4 py-3">{{ formatWindow(rule) }}</td>
-                <td class="px-4 py-3">{{ rule.data?.limitCount ?? '-' }}</td>
+                <td class="px-4 py-3">{{ formatRuleDetail(rule) }}</td>
+                <td class="px-4 py-3">{{ rule.save ? 'true' : 'false' }}</td>
+                <td class="px-4 py-3">{{ rule.update ? 'true' : 'false' }}</td>
+                <td class="px-4 py-3">
+                  <button
+                    @click="deleteRule(rule.ID)"
+                    class="rounded-lg px-3 py-1 text-sm border border-red-500/20 text-red-500 hover:bg-red-500/10"
+                  >
+                    Smazat
+                  </button>
+                </td>
               </tr>
 
-              <tr v-if="data.length === 0">
-                <td colspan="8" class="px-4 py-6 text-center text-muted-foreground">
+              <tr v-if="rules.length === 0">
+                <td colspan="7" class="px-4 py-6 text-center text-muted-foreground">
                   Žádná pravidla nebyla nalezena.
                 </td>
               </tr>

@@ -4,7 +4,7 @@ import router from './router'
 import './style.css'
 const app = createApp(App)
 
-const API = '${window.location.protocol}//{window.location.hostname}:8080'
+const API = '192.168.50.1:8080'
 
 app.use(router)
 
