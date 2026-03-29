@@ -45,7 +45,13 @@ void KernelSocket::recieveData() {
     std::array<char,KernelSocket::BUFFERSIZE> BUFFER{};
     ssize_t bytes = recv(this->fd, BUFFER.data(), BUFFER.size(), 0);
     if (bytes < 0) {
-       throw std::runtime_error("Error while recieving data from kernel\n");
+       if (errno == EINTR) return;
+
+        if (errno == ENOBUFS) {
+            fprintf(stderr, "Varování: Nestíháme brát pakety (ENOBUFS)\n");
+            return;
+        }
+        throw std::runtime_error("Chyba při příjmu: " + std::string(strerror(errno)));
     }
     nfq_handle_packet(this->handle, BUFFER.data(), bytes);
 }

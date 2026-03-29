@@ -21,6 +21,10 @@ void FilterRuleLogger::removeRuleByID(std::shared_ptr<FilterRule> rule) {
     if(rmRule->layer == "L4Simple") {
         tableName = "l4Simple_rules";
     }
+    if(rmRule->layer == "L4TCP") {
+        tableName = "l4TCP";
+    }
+
     std::string sql = "DELETE FROM " + tableName + " WHERE id = ?;";
     if (sqlite3_prepare_v2(this->db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
         sqlite3_bind_int(stmt, 1, rule->getID());
