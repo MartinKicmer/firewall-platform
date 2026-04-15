@@ -11,7 +11,6 @@
 
 
 L4TCPRequest ServerHandler::parseL4TCPRequest(const Pistache::Rest::Request& request) {
-
     auto j = nlohmann::json::parse(request.body());
     L4TCPRequest req{};
 
@@ -21,10 +20,10 @@ L4TCPRequest ServerHandler::parseL4TCPRequest(const Pistache::Rest::Request& req
     if (j.contains("limitCount")) req.limitCount = j["limitCount"].get<int>();
     if (j.contains("save"))       req.save = j["save"].get<bool>();
     if (j.contains("sourcePort")) req.sPort = j["sourcePort"].get<int>();
-    if (j.contains("destPort"))   req.dPort = j["destPort"].get<int>(); 
-    if (j.contains("flags")) req.flags = j["flags"].get<uint8_t>();
-    if (j.contains("maxWin")) req.maxWindowSize = j["maxWin"].get<short>();
-    if (j.contains("minWin")) req.maxWindowSize = j["minWin"].get<short>();
+    if (j.contains("destPort"))   req.dPort = j["destPort"].get<int>();
+    if (j.contains("flags"))      req.flags = j["flags"].get<uint8_t>();
+    if (j.contains("maxWin"))     req.maxWindowSize = j["maxWin"].get<short>();
+    if (j.contains("minWin"))     req.minWindowSize = j["minWin"].get<short>();
 
     return req;
 }
@@ -200,15 +199,20 @@ void ServerHandler::getLastPDUs(const Pistache::Rest::Request& request, Pistache
     try {
         bool permit = request.param(":action").as<bool>();
         auto query = request.query();
-	setupCors(response);
-        if(!query.has("count") || !query.has("layer")) response.send(Pistache::Http::Code::Bad_Request);
+        setupCors(response);
+
+        if (!query.has("count") || !query.has("layer")) {
+            response.send(Pistache::Http::Code::Bad_Request, "Missing count or layer");
+            return;
+        }
+
         int count = std::stoi(query.get("count").value());
         std::string layer = query.get("layer").value();
-        
-        this->packetBlockerGateway->setStreamParams(layer,permit);
+
+        this->packetBlockerGateway->setStreamParams(layer, permit);
         response.send(Pistache::Http::Code::Ok);
     } catch (const std::exception& e) {
+        std::cerr << "getLastPDUs error: " << e.what() << std::endl;
         response.send(Pistache::Http::Code::Internal_Server_Error);
-        std::exit(EXIT_FAILURE);
-    } 
+    }
 }
