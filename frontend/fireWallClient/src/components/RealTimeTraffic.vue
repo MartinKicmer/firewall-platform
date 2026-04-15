@@ -1,341 +1,148 @@
 <script setup lang="ts">
-import { Shield, LayoutDashboard, ScrollText } from 'lucide-vue-next'
+import { Shield, LayoutDashboard, Search, ScrollText, Wifi, Trash2, Play, Square, Cpu } from 'lucide-vue-next'
 import { ref, onUnmounted } from 'vue'
 import api from '@/api/axios'
-import TrafficControlPanel from '@/components/TrafficControlPanel.vue'
 import TrafficTable from '@/components/TrafficTable.vue'
-import type { TrafficControlSubmit, TrafficRow } from '@/types/traffic'
+import type { TrafficRow } from '@/types/traffic'
 
-const isStarting = ref(false)
-const startMessage = ref<string | null>(null)
-const startError = ref<string | null>(null)
 const rows = ref<TrafficRow[]>([])
 const listening = ref(false)
-
+const isTransitioning = ref(false)
+const selectedLayer = ref('L3')
 let socket: WebSocket | null = null
-const MAX_ROWS = 100
-
-const protocolToText = (protocol?: number | string) => {
-  const value = typeof protocol === 'string' ? Number(protocol) : protocol
-
-  if (value === 6) return 'TCP'
-  if (value === 17) return 'UDP'
-  if (value === 1) return 'ICMP'
-  return String(protocol ?? '-')
-}
-
-const pushRow = (row: TrafficRow) => {
-  rows.value.unshift(row)
-
-  if (rows.value.length > MAX_ROWS) {
-    rows.value = rows.value.slice(0, MAX_ROWS)
-  }
-}
-
-const clearRows = () => {
-  rows.value = []
-}
-
-const buildInfo = (raw: Record<string, unknown>) => {
-  const parts: string[] = []
-
-  if ('type' in raw) parts.push(`Type: ${String(raw.type)}`)
-  if ('ttl' in raw) parts.push(`TTL: ${String(raw.ttl)}`)
-  if ('total_len' in raw) parts.push(`Len: ${String(raw.total_len)}`)
-  if ('tos' in raw) parts.push(`TOS: ${String(raw.tos)}`)
-  if ('id' in raw) parts.push(`ID: ${String(raw.id)}`)
-  if ('checksum' in raw) parts.push(`Checksum: ${String(raw.checksum)}`)
-
-  return parts.length > 0 ? parts.join(', ') : '-'
-}
-
-const normalizeTrafficRow = (
-  payload: Record<string, unknown>,
-  layer: string,
-  action: 0 | 1
-): TrafficRow => {
-  return {
-    timestamp: new Date().toLocaleTimeString(),
-    layer,
-    action: action === 1 ? 'ALLOW' : 'DENY',
-    source:
-      (payload.src as string | undefined) ??
-      (payload.source as string | undefined) ??
-      (payload.sourceMAC as string | undefined) ??
-      '-',
-    destination:
-      (payload.dest as string | undefined) ??
-      (payload.destination as string | undefined) ??
-      (payload.destMAC as string | undefined) ??
-      '-',
-    sourcePort: (payload.sourcePort as number | string | undefined) ?? '-',
-    destinationPort: (payload.destPort as number | string | undefined) ?? '-',
-    protocol: protocolToText(payload.protocol as number | string | undefined),
-    info: buildInfo(payload),
-    raw: payload,
-  }
-}
-let manualClose = false
 
 const connectWebSocket = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
+  return new Promise((resolve) => {
+    if (socket?.readyState === WebSocket.OPEN) return resolve()
+    const host = import.meta.env.VITE_API_IP
+    socket = new WebSocket(`ws://${host}:9090`)
+    socket.onopen = () => { 
       listening.value = true
-      resolve()
-      return
+      resolve() 
     }
-
-    if (socket && socket.readyState === WebSocket.CONNECTING) {
-      resolve()
-      return
-    }
-
-    manualClose = false
-
-    socket = new WebSocket('ws://192.168.50.1:9090')
-
-    socket.onopen = () => {
-      console.log('WebSocket připojen')
-      listening.value = true
-      startError.value = null
-      resolve()
-    }
-
     socket.onmessage = (event) => {
-      console.log('WS MESSAGE:', event.data)
-
-      if (typeof event.data !== 'string') return
-
-      if (event.data === 'Full packet stream from firewall') {
-        pushRow({
-          timestamp: new Date().toLocaleTimeString(),
-          layer: 'SYSTEM',
-          action: undefined,
-          source: '-',
-          destination: '-',
-          sourcePort: '-',
-          destinationPort: '-',
-          protocol: '-',
-          info: event.data,
-          raw: { message: event.data },
-        })
-        return
-      }
-
       try {
-        const parsed = JSON.parse(event.data) as Record<string, unknown>
-
-        const detectedLayer =
-          parsed.type === 'IPv4Datagram'
-            ? 'L3'
-            : typeof parsed.type === 'string'
-              ? parsed.type
-              : '-'
-
-        pushRow({
+        const parsed = JSON.parse(event.data)
+        rows.value.unshift({
           timestamp: new Date().toLocaleTimeString(),
-          layer: detectedLayer,
-          action: undefined,
-          source: (parsed.src as string | undefined) ?? '-',
-          destination: (parsed.dest as string | undefined) ?? '-',
-          sourcePort: (parsed.sourcePort as number | string | undefined) ?? '-',
-          destinationPort: (parsed.destPort as number | string | undefined) ?? '-',
-          protocol: protocolToText(parsed.protocol as number | string | undefined),
-          info: buildInfo(parsed),
-          raw: parsed,
+          layer: selectedLayer.value, 
+          source: parsed.src || parsed.source_mac || '-',
+          destination: parsed.dest || parsed.dest_mac || '-',
+          sourcePort: parsed.sourcePort || '-',
+          destinationPort: parsed.destPort || '-',
+          protocol: parsed.protocol || '-',
+          info: `TTL: ${parsed.ttl || '-'}, Len: ${parsed.total_len || parsed.len || '-'}`,
+          action: parsed.action || '-',
+          raw: parsed
         })
-      } catch {
-        pushRow({
-          timestamp: new Date().toLocaleTimeString(),
-          layer: '-',
-          action: undefined,
-          source: '-',
-          destination: '-',
-          sourcePort: '-',
-          destinationPort: '-',
-          protocol: '-',
-          info: String(event.data),
-          raw: { message: String(event.data) },
-        })
-      }
+        if (rows.value.length > 500) rows.value.pop()
+      } catch (e) { }
     }
-
-    socket.onerror = (err) => {
-      console.error('WebSocket error:', err)
-    }
-
-    socket.onclose = (event) => {
-      console.log('WebSocket odpojen', {
-        code: event.code,
-        reason: event.reason,
-        wasClean: event.wasClean,
-      })
-
-      listening.value = false
-      socket = null
-
-      if (!event.wasClean) {
-        startError.value = `WebSocket spojení bylo neočekávaně ukončeno (code ${event.code}).`
-      }
-    }
-
-    setTimeout(() => {
-      if (!socket || socket.readyState !== WebSocket.OPEN) {
-        reject(new Error('WebSocket spojení se nepodařilo navázat'))
-      }
-    }, 3000)
+    socket.onclose = () => { listening.value = false }
   })
 }
 
-onUnmounted(() => {
-  manualClose = true
-  if (socket) {
-    socket.close()
-    socket = null
-  }
-})
-
-const startRedirect = async ({ action, layer, count }: TrafficControlSubmit) => {
-  isStarting.value = true
-  startMessage.value = null
-  startError.value = null
-
-  const safeCount =
-    typeof count === 'number' && Number.isFinite(count) && count > 0 ? count : 10
-
+const startCapture = async () => {
+  isTransitioning.value = true
+  rows.value = [] 
   try {
     await connectWebSocket()
-
-    await api.get(`/fireWall/redirect/${action}`, {
-      params: {
-        count: safeCount,
-        layer,
-      },
+    await api.get('/fireWall/redirect/start', { 
+      params: { count: 0, layer: selectedLayer.value } 
     })
-
-    listening.value = true
-    startMessage.value = `Sledování pro ${layer} bylo spuštěno.`
-
-    pushRow(
-      normalizeTrafficRow(
-        { info: `Redirect spuštěn pro ${layer}, count=${String(safeCount)}` },
-        layer,
-        action
-      )
-    )
-  } catch (e: any) {
-    startError.value =
-      e.response?.status != null
-        ? `Chyba serveru: ${e.response.status}`
-        : e.message ?? 'Nepodařilo se spustit sledování provozu.'
+  } catch (e) {
+    console.error(e)
   } finally {
-    isStarting.value = false
+    isTransitioning.value = false
+  }
+}
+
+const stopCapture = async () => {
+  isTransitioning.value = true
+  try {
+    if (socket) socket.close()
+    await api.get('/fireWall/redirect/stop')
+    listening.value = false
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isTransitioning.value = false
   }
 }
 
 onUnmounted(() => {
-  if (socket) {
-    socket.close()
-    socket = null
-  }
+  if (socket) socket.close()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-foreground flex">
-    <aside class="w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4">
-      <div class="flex items-center gap-2 px-2 pb-4 font-semibold">
-        <Shield :size="20" />
-        <span>PacketBlocker</span>
+  <div class="layout-wrapper">
+    <aside class="sidebar">
+      <div class="flex items-center gap-2.5 px-2 pb-6 pt-2 font-semibold text-lg text-white">
+        <Shield :size="19" class="text-blue-500" /> 
+        <span class="tracking-tight font-bold">PacketBlocker</span>
       </div>
-
-      <nav class="mt-2 flex flex-col gap-1">
-        <router-link
-          to="/"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline
-                 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-          exact-active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-        >
-          <LayoutDashboard :size="18" />
-          Dashboard
+      <nav class="flex flex-col gap-1.5">
+        <router-link to="/" class="group nav-link">
+          <LayoutDashboard :size="19" /> Dashboard
         </router-link>
-
-        <router-link
-          to="/rules"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline
-                 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-        >
-          <Shield :size="18" />
-          Firewall Rules
+        <router-link to="/rules" class="group nav-link">
+          <Shield :size="19" /> Firewall Rules
         </router-link>
-
-        <router-link
-          to="/logs"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline
-                 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-        >
-          <ScrollText :size="18" />
-          Real-time Trafic
+        <router-link to="/search" class="group nav-link">
+          <Search :size="19" /> Search Rules</router-link>
+        <router-link to="/logs" class="group nav-link">
+          <ScrollText :size="19" class="text-blue-500" /> Real-time Traffic
         </router-link>
       </nav>
     </aside>
 
-    <div class="flex-1 flex flex-col">
-      <header class="h-14 bg-card border-b border-border flex items-center justify-between px-4">
-        <h1 class="text-lg font-semibold">Real-time Trafic</h1>
-
-        <div
-          class="inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs font-semibold border"
-          :class="
-            listening
-              ? 'bg-green-500/10 text-green-600 border-green-500/20'
-              : 'bg-muted text-muted-foreground border-border'
-          "
-        >
-          <span
-            class="w-2 h-2 rounded-full"
-            :class="listening ? 'bg-green-500' : 'bg-muted-foreground'"
-          ></span>
-          {{ listening ? 'Listening' : 'Stopped' }}
+    <div class="main-container overflow-hidden">
+      <header class="header-nav">
+        <div class="flex items-center gap-3">
+          <Wifi :size="20" :class="listening ? 'text-blue-500 animate-pulse' : 'text-pb-text-dim'" /> 
+          <h1 class="text-xl font-extrabold tracking-tighter text-white font-sans">Real-time Traffic</h1>
+        </div>
+        <div :class="listening ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'" class="badge-live">
+            <span class="w-2 h-2 rounded-full" :class="listening ? 'bg-blue-500' : 'bg-red-500'"></span>
+            {{ listening ? 'STREAMING' : 'STREAMING PAUSED' }}
         </div>
       </header>
 
-      <main class="p-6 space-y-6">
-        <section class="rounded-xl border border-border bg-card p-6">
-          <h2 class="text-base font-semibold mb-4">Nastavení sledování</h2>
+      <main class="p-8 flex-1 flex flex-col min-h-0">
+        <section class="stats-card flex-1 flex flex-col min-h-0 overflow-hidden !p-0">
+          <div class="p-4 border-b border-pb-border bg-pb-card/50 flex justify-between items-center px-6">
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2 pr-4 border-r border-pb-border">
+                    <h2 class="text-sm font-bold text-white uppercase tracking-tight">Live Traffic</h2>
+                    <span class="text-[10px] bg-pb-border text-pb-text-dim px-2 py-0.5 rounded border border-pb-hover font-mono">
+                      {{ rows.length }} pkts
+                    </span>
+                </div>
 
-          <TrafficControlPanel
-            :loading="isStarting"
-            @start="startRedirect"
-          />
+                <div class="flex items-center gap-4">
+                  <button v-if="!listening" @click="startCapture" :disabled="isTransitioning" class="flex items-center gap-2 bg-green-600/10 text-green-500 hover:bg-green-600 hover:text-white px-4 py-1.5 rounded-lg text-[10px] font-bold border border-green-600/20 transition-all">
+                    <Play :size="14" fill="currentColor" /> RUN
+                  </button>
 
-          <div class="mt-4 flex items-center gap-3">
-            <span v-if="startMessage" class="text-sm text-green-600">
-              {{ startMessage }}
-            </span>
+                  <button v-else @click="stopCapture" :disabled="isTransitioning" class="flex items-center gap-2 bg-red-600/10 text-red-400 hover:bg-red-600 hover:text-white px-4 py-1.5 rounded-lg text-[10px] font-bold border border-red-600/20 transition-all">
+                    <Square :size="14" fill="currentColor" /> STOP
+                  </button>
+                </div>
+            </div>
 
-            <span v-if="startError" class="text-sm text-red-500">
-              {{ startError }}
-            </span>
-          </div>
-        </section>
-
-        <section class="rounded-xl border border-border bg-card p-6">
-          <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-base font-semibold">Live traffic</h2>
-
-            <button
-              @click="clearRows"
-              class="rounded-lg px-3 py-2 text-sm font-medium border border-border hover:opacity-90"
-            >
-              Vyčistit tabulku
+            <button @click="rows = []" class="group flex items-center gap-2 text-[10px] font-bold text-pb-text-dim hover:text-white bg-pb-border hover:bg-pb-hover px-3 py-1.5 rounded-lg border border-pb-hover transition-all">
+              <Trash2 :size="14" class="group-hover:rotate-12 transition-transform" /> Clear memory
             </button>
           </div>
 
-          <TrafficTable :rows="rows" />
+          <div class="flex-1 overflow-auto bg-pb-dark">
+            <TrafficTable :rows="rows" />
+            <div v-if="rows.length === 0" class="h-full flex flex-col items-center justify-center text-pb-text-dim space-y-4 opacity-50">
+               <Wifi :size="48" stroke-width="1" />
+               <p class="text-sm italic font-sans">Vyberte vrstvu a spusťte sledování provozu.</p>
+            </div>
+          </div>
         </section>
       </main>
     </div>

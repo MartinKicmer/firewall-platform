@@ -11,14 +11,14 @@ const props = defineProps<{
     <table class="w-full text-sm">
       <thead class="bg-muted/40 border-b border-border">
         <tr>
-          <th class="text-left px-4 py-3">Čas</th>
-          <th class="text-left px-4 py-3">Vrstva</th>
-          <th class="text-left px-4 py-3">Akce</th>
-          <th class="text-left px-4 py-3">Zdroj</th>
-          <th class="text-left px-4 py-3">Cíl</th>
+          <th class="text-left px-4 py-3">Time</th>
+          <th class="text-left px-4 py-3">Layer</th>
+          <th class="text-left px-4 py-3">Action</th>
+          <th class="text-left px-4 py-3">Source</th>
+          <th class="text-left px-4 py-3">Destination</th>
           <th class="text-left px-4 py-3">Src Port</th>
           <th class="text-left px-4 py-3">Dst Port</th>
-          <th class="text-left px-4 py-3">Protokol</th>
+          <th class="text-left px-4 py-3">Protocol</th>
           <th class="text-left px-4 py-3">Info</th>
         </tr>
       </thead>
@@ -32,8 +32,8 @@ const props = defineProps<{
           <td class="px-4 py-3">{{ row.timestamp ?? '-' }}</td>
           <td class="px-4 py-3">{{ row.layer ?? '-' }}</td>
           <td class="px-4 py-3">{{ row.action ?? '-' }}</td>
-          <td class="px-4 py-3">{{ row.source ?? '-' }}</td>
-          <td class="px-4 py-3">{{ row.destination ?? '-' }}</td>
+          <td class="px-4 py-3 break-all">{{ row.source ?? '-' }}</td>
+          <td class="px-4 py-3 break-all">{{ row.destination ?? '-' }}</td>
           <td class="px-4 py-3">{{ row.sourcePort ?? '-' }}</td>
           <td class="px-4 py-3">{{ row.destinationPort ?? '-' }}</td>
           <td class="px-4 py-3">{{ row.protocol ?? '-' }}</td>
@@ -42,7 +42,7 @@ const props = defineProps<{
 
         <tr v-if="props.rows.length === 0">
           <td colspan="9" class="px-4 py-6 text-center text-muted-foreground">
-            Zatím nejsou žádná data provozu.
+            There is no traffic data available yet.
           </td>
         </tr>
       </tbody>

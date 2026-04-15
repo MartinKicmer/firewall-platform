@@ -1,291 +1,127 @@
 <script setup lang="ts">
-import { Shield, LayoutDashboard, ScrollText } from 'lucide-vue-next'
-import { ref, computed, onMounted } from 'vue'
-import api from '@/api/axios'
+import { Shield, LayoutDashboard, ScrollText, Globe, Activity, PieChart, Search } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-type Packet = {
-  src?: string
-  dest?: string
-  protocol?: number | string
-  sourcePort?: number
-  destPort?: number
-  type?: string
-  ttl?: number
-  total_len?: number
-}
+const packets = ref<any[]>([])
+let socket: WebSocket | null = null
 
-const packets = ref<Packet[]>([])
-const isLoading = ref(false)
-const error = ref<string | null>(null)
-
-const protocolToText = (protocol?: number | string) => {
-  const value = typeof protocol === 'string' ? Number(protocol) : protocol
-
-  if (value === 6) return 'TCP'
-  if (value === 17) return 'UDP'
-  if (value === 1) return 'ICMP'
-  return String(protocol ?? '-')
-}
-
-const countOccurrences = (items: (string | number | undefined)[]) => {
-  const map = new Map<string, number>()
-
-  for (const item of items) {
-    if (item === undefined || item === null || item === '') continue
-    const key = String(item)
-    map.set(key, (map.get(key) ?? 0) + 1)
+const connectLiveStats = () => {
+  const host = import.meta.env.VITE_API_IP
+  socket = new WebSocket(`ws://${host || 'localhost'}:9090`)
+  
+  socket.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data)
+      packets.value.unshift(parsed)
+    } catch (e) { console.error("WS Error:", e) }
   }
-
-  return map
 }
 
-const getTopEntry = (map: Map<string, number>) => {
-  let topKey = '-'
-  let topValue = 0
+const getStrokeDash = (percentage: number) => {
+  const radius = 15.9155;
+  const circumference = 2 * Math.PI * radius;
+  return `${(percentage * circumference) / 100} ${circumference}`;
+}
 
-  for (const [key, value] of map.entries()) {
-    if (value > topValue) {
-      topKey = key
-      topValue = value
-    }
-  }
+const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-  return { key: topKey, count: topValue }
+const protocolToText = (p?: any) => {
+  const v = Number(p);
+  if (v === 6) return 'TCP'; if (v === 17) return 'UDP'; if (v === 1) return 'ICMP';
+  return String(p ?? '-');
+}
+
+const getTopEntries = (items: any[], limit = 5) => {
+    const map = new Map<string, number>();
+    items.forEach(i => { if(i) map.set(String(i), (map.get(String(i)) ?? 0) + 1) });
+    const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
+    return Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([key, count]) => ({ key, count, percentage: total > 0 ? Math.round((count / total) * 100) : 0 }));
 }
 
 const totalPackets = computed(() => packets.value.length)
+const topSources = computed(() => getTopEntries(packets.value.map(p => p.src || p.source)))
+const topDestinations = computed(() => getTopEntries(packets.value.map(p => p.dest || p.destination)))
+const topProtocols = computed(() => getTopEntries(packets.value.map(p => protocolToText(p.protocol))))
 
-const topSourceIp = computed(() => {
-  const counts = countOccurrences(packets.value.map((p) => p.src))
-  return getTopEntry(counts)
-})
-
-const topDestinationIp = computed(() => {
-  const counts = countOccurrences(packets.value.map((p) => p.dest))
-  return getTopEntry(counts)
-})
-
-const topProtocol = computed(() => {
-  const counts = countOccurrences(
-    packets.value.map((p) => protocolToText(p.protocol))
-  )
-  return getTopEntry(counts)
-})
-
-const topPort = computed(() => {
-  const counts = countOccurrences([
-    ...packets.value.map((p) => p.sourcePort),
-    ...packets.value.map((p) => p.destPort),
-  ])
-  return getTopEntry(counts)
-})
-
-const avgPacketLength = computed(() => {
-  const lengths = packets.value
-    .map((p) => p.total_len)
-    .filter((value): value is number => typeof value === 'number')
-
-  if (lengths.length === 0) return '-'
-
-  const sum = lengths.reduce((acc, value) => acc + value, 0)
-  return Math.round(sum / lengths.length)
-})
-
-const recentPackets = computed(() => packets.value.slice(0, 10))
-
-const fetchStatsData = async () => {
-  isLoading.value = true
-  error.value = null
-
-  try {
-    const response = await api.get('/fireWall/redirect/1', {
-      params: {
-        count: 20,
-        layer: 'L3',
-      },
-    })
-
-    packets.value = Array.isArray(response.data) ? response.data : []
-  } catch (e: any) {
-    error.value =
-      e.response?.status != null
-        ? `Chyba serveru: ${e.response.status}`
-        : 'Nepodařilo se načíst statistiky.'
-    packets.value = []
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(fetchStatsData)
+onMounted(() => connectLiveStats())
+onUnmounted(() => socket?.close())
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-foreground flex">
-    <aside class="w-64 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border p-4">
-      <div class="flex items-center gap-2 px-2 pb-4 font-semibold">
-        <Shield :size="20" />
-        <span>PacketBlocker</span>
+  <div class="layout-wrapper">
+    <aside class="sidebar">
+      <div class="flex items-center gap-2.5 px-2 pb-6 pt-2 font-semibold text-lg text-white">
+        <Shield :size="22" class="text-blue-500" /> <span class="tracking-tight font-bold">PacketBlocker</span>
       </div>
-
-      <nav class="mt-2 flex flex-col gap-1">
-        <router-link
-          to="/"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline
-                 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-          exact-active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-        >
-          <LayoutDashboard :size="18" />
-          Dashboard
-        </router-link>
-
-        <router-link
-          to="/rules"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline
-                 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-        >
-          <Shield :size="18" />
-          Firewall Rules
-        </router-link>
-
-        <router-link
-          to="/logs"
-          class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm no-underline
-                 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          active-class="bg-sidebar-accent text-sidebar-foreground ring-1 ring-sidebar-ring/40"
-        >
-          <ScrollText :size="18" />
-          Real-time Trafic
-        </router-link>
+      <nav class="flex flex-col gap-1.5 flex-grow">
+        <router-link to="/" class="group nav-link nav-link-active"><LayoutDashboard :size="19" class="text-blue-500" /> Dashboard</router-link>
+        <router-link to="/rules" class="group nav-link"><Shield :size="19" /> Firewall Rules</router-link>
+        <router-link to="/search" class="group nav-link"><Search :size="19"/> Search Rules</router-link>
+        <router-link to="/logs" class="group nav-link"><ScrollText :size="19" /> Real-time Traffic</router-link>
       </nav>
     </aside>
 
-    <div class="flex-1 flex flex-col">
-      <header class="h-14 bg-card border-b border-border flex items-center justify-between px-4">
-        <h1 class="text-lg font-semibold">Dashboard</h1>
-
-        <div
-          class="inline-flex items-center gap-2 px-3 py-2 rounded-full text-xs font-semibold
-                 bg-green-500/10 text-green-600 border border-green-500/20"
-        >
-          <span class="w-2 h-2 rounded-full bg-green-500"></span>
-          System Active
+    <div class="main-container">
+      <header class="header-nav">
+        <div class="flex items-center gap-3 font-black tracking-tighter text-white">
+          <Activity class="text-green-500 animate-pulse" /> Live Analysis
+        </div>
+        <div class="badge-live bg-green-500/10 text-green-400 border-green-500/20">
+            <span class="w-2 h-2 rounded-full bg-green-500"></span> SYSTEM ACTIVE
         </div>
       </header>
 
-      <main class="p-6 space-y-6">
-        <div v-if="isLoading" class="text-sm text-muted-foreground">
-          Načítám statistiky...
-        </div>
-
-        <div v-else-if="error" class="text-sm text-red-500">
-          {{ error }}
-        </div>
-
-        <template v-else>
-          <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-            <div class="rounded-xl border border-border bg-card p-5">
-              <p class="text-sm text-muted-foreground">Celkem packetů</p>
-              <p class="text-2xl font-semibold mt-2">{{ totalPackets }}</p>
-            </div>
-
-            <div class="rounded-xl border border-border bg-card p-5">
-              <p class="text-sm text-muted-foreground">Nejčastější zdrojová IP</p>
-              <p class="text-lg font-semibold mt-2 break-all">{{ topSourceIp.key }}</p>
-              <p class="text-xs text-muted-foreground mt-1">{{ topSourceIp.count }}×</p>
-            </div>
-
-            <div class="rounded-xl border border-border bg-card p-5">
-              <p class="text-sm text-muted-foreground">Nejčastější cílová IP</p>
-              <p class="text-lg font-semibold mt-2 break-all">{{ topDestinationIp.key }}</p>
-              <p class="text-xs text-muted-foreground mt-1">{{ topDestinationIp.count }}×</p>
-            </div>
-
-            <div class="rounded-xl border border-border bg-card p-5">
-              <p class="text-sm text-muted-foreground">Nejčastější protokol</p>
-              <p class="text-2xl font-semibold mt-2">{{ topProtocol.key }}</p>
-              <p class="text-xs text-muted-foreground mt-1">{{ topProtocol.count }}×</p>
-            </div>
-
-            <div class="rounded-xl border border-border bg-card p-5">
-              <p class="text-sm text-muted-foreground">Nejčastější port</p>
-              <p class="text-2xl font-semibold mt-2">{{ topPort.key }}</p>
-              <p class="text-xs text-muted-foreground mt-1">{{ topPort.count }}×</p>
-            </div>
-          </section>
-
-          <section class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            <div class="rounded-xl border border-border bg-card p-5">
-              <p class="text-sm text-muted-foreground">Průměrná délka packetu</p>
-              <p class="text-2xl font-semibold mt-2">
-                {{ avgPacketLength === '-' ? '-' : `${avgPacketLength} B` }}
-              </p>
-            </div>
-
-            <div class="rounded-xl border border-border bg-card p-5">
-              <p class="text-sm text-muted-foreground">Zachycený typ provozu</p>
-              <p class="text-lg font-semibold mt-2">IPv4 / redirect statistiky</p>
-              <p class="text-xs text-muted-foreground mt-1">
-                Data jsou počítaná z posledního načtení packetů.
-              </p>
-            </div>
-          </section>
-
-          <section class="rounded-xl border border-border bg-card p-6">
+      <main class="p-8 space-y-8">
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="stats-card stats-card-accent">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-base font-semibold">Poslední zachycené packety</h2>
-
-              <button
-                @click="fetchStatsData"
-                class="rounded-lg px-4 py-2 text-sm font-medium border border-border bg-sidebar-accent hover:opacity-90"
-              >
-                Obnovit
-              </button>
+                <p class="text-xs text-pb-text-muted uppercase font-bold tracking-wider">Total captured</p>
+                <LayoutDashboard :size="16" class="text-blue-500" />
             </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full text-sm">
-                <thead class="bg-muted/40 border-b border-border">
-                  <tr>
-                    <th class="text-left px-4 py-3">Typ</th>
-                    <th class="text-left px-4 py-3">Zdroj</th>
-                    <th class="text-left px-4 py-3">Cíl</th>
-                    <th class="text-left px-4 py-3">Protokol</th>
-                    <th class="text-left px-4 py-3">Src Port</th>
-                    <th class="text-left px-4 py-3">Dst Port</th>
-                    <th class="text-left px-4 py-3">TTL</th>
-                    <th class="text-left px-4 py-3">Délka</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr
-                    v-for="(packet, index) in recentPackets"
-                    :key="index"
-                    class="border-b border-border last:border-b-0"
-                  >
-                    <td class="px-4 py-3">{{ packet.type ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ packet.src ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ packet.dest ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ protocolToText(packet.protocol) }}</td>
-                    <td class="px-4 py-3">{{ packet.sourcePort ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ packet.destPort ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ packet.ttl ?? '-' }}</td>
-                    <td class="px-4 py-3">{{ packet.total_len ?? '-' }}</td>
-                  </tr>
-
-                  <tr v-if="recentPackets.length === 0">
-                    <td colspan="8" class="px-4 py-6 text-center text-muted-foreground">
-                      Nejsou dostupná žádná data.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <p class="text-4xl font-black tracking-tighter text-white">{{ totalPackets.toLocaleString('cs-CZ') }}</p>
+            <p class="text-[10px] text-green-400 mt-2 font-bold uppercase tracking-widest flex items-center gap-1"><Activity :size="12" /> Real time</p>
+          </div>
+          <div v-for="(item, i) in [{t:'Top Source IP', d:topSources}, {t:'Top Destination', d:topDestinations}]" :key="i" class="stats-card">
+            <h3 class="text-[10px] text-pb-text-muted uppercase font-bold tracking-widest mb-4">{{ item.t }}</h3>
+            <div class="flex flex-col gap-1">
+                <span class="text-xs font-mono text-white bg-pb-dark px-2 py-1 rounded border border-pb-border truncate">{{ item.d[0]?.key || '-' }}</span>
+                <span class="text-[10px] text-blue-500 font-bold mt-1 uppercase">{{ item.d[0]?.count || 0 }}x hits</span>
             </div>
-          </section>
-        </template>
+          </div>
+        </section>
+
+        <section class="stats-card p-8">
+            <div class="flex items-center justify-between mb-10">
+                <h2 class="text-lg font-bold tracking-tight text-white flex items-center gap-2.5 uppercase"><PieChart :size="20" class="text-blue-500" /> Network Distribution</h2>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                <div v-for="(chart, idx) in [{title: 'Protocols', data: topProtocols}, {title: 'Source IP', data: topSources}]" :key="idx" class="flex flex-col items-center">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-pb-text-muted mb-8">{{ chart.title }}</p>
+                    <div class="relative w-48 h-48 mb-8">
+                        <svg viewBox="0 0 42 42" class="w-full h-full transform -rotate-90">
+                            <circle cx="21" cy="21" r="15.9155" fill="transparent" stroke="#27272A" stroke-width="4"></circle>
+                            <circle v-for="(entry, i) in chart.data" :key="i" cx="21" cy="21" r="15.9155" fill="transparent" :stroke="chartColors[i]" stroke-width="4" :stroke-dasharray="getStrokeDash(entry.percentage)" class="transition-all duration-700"></circle>
+                        </svg>
+                        <div v-if="idx === 0" class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span class="text-2xl font-black tracking-tighter">{{ totalPackets }}</span>
+                            <span class="text-[8px] uppercase text-pb-text-dim font-bold tracking-tighter">Packets</span>
+                        </div>
+                    </div>
+                    <div class="w-full max-w-sm space-y-3">
+                        <div v-for="(entry, i) in chart.data" :key="i" class="flex items-center justify-between text-[11px]">
+                            <div class="flex items-center gap-3">
+                                <div class="w-2 h-2 rounded-full" :style="{ backgroundColor: chartColors[i] }"></div>
+                                <span class="font-bold text-white uppercase tracking-wider truncate max-w-[150px]">{{ entry.key }}</span>
+                            </div>
+                            <span class="text-pb-text-muted font-mono">{{ idx === 0 ? entry.percentage + '%' : entry.count + 'x' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
       </main>
     </div>
   </div>
