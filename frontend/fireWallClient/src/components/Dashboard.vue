@@ -7,7 +7,7 @@ let socket: WebSocket | null = null
 
 const connectLiveStats = () => {
   const host = import.meta.env.VITE_API_IP
-  socket = new WebSocket(`ws://${host || 'localhost'}:9090`)
+  socket = new WebSocket(`ws://${host || 'localhost'}:9091`)
   
   socket.onmessage = (event) => {
     try {

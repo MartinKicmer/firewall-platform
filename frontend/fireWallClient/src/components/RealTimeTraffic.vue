@@ -15,7 +15,7 @@ const connectWebSocket = (): Promise<void> => {
   return new Promise((resolve) => {
     if (socket?.readyState === WebSocket.OPEN) return resolve()
     const host = import.meta.env.VITE_API_IP
-    socket = new WebSocket(`ws://${host}:9090`)
+    socket = new WebSocket(`ws://${host}:9091`)
     socket.onopen = () => { 
       listening.value = true
       resolve() 
