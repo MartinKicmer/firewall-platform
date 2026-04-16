@@ -92,6 +92,7 @@ std::shared_ptr<RedirectRule> CLIParser::parseRedirectRule() {
             count = std::atoi(this->argv[i+1]);
         }
     }
+    std::cout << "LAYER: " << layer << std::endl;
     return std::make_shared<RedirectRule>(permit,layer,count);
 }
 
