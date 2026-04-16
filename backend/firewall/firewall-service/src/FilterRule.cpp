@@ -49,6 +49,7 @@ std::string FilterRule::serializeToJSON()  {
         return j.dump();
     }
     j["ID"] = this->ID;
+    j["ignore"] = this->ignore;
     if(auto selectRule = std::dynamic_pointer_cast<SelectRule>(this->rule)) {
         j["select"] = {
             {"permit",selectRule->permit},
@@ -116,7 +117,7 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
         return std::make_shared<FilterRule>(rule, -1);
     }
     int id = j["ID"];
-
+    bool ignore = j["ignore"];
     if(j.contains("select")) {
         bool permit = j["select"]["permit"];
         std::string layer(j["select"]["layer"]);
@@ -159,7 +160,7 @@ std::shared_ptr<FilterRule> FilterRule::deserialize(const std::string &jsonData)
     if(j["ruleType"] == "L4TCP") {
         rule = deserializeL4TCPRule(j);
     }
-    return std::make_shared<FilterRule>(rule, id,save);
+    return std::make_shared<FilterRule>(rule, id,save,ignore);
 }
 
 std::shared_ptr<L3Rule> FilterRule::deserializeL3Rule(const nlohmann::json& j) {

@@ -131,6 +131,9 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
         else throw std::runtime_error("Interactive CLI could not create rule");
     }
 
+    bool shouldIgnore = false;
+
+    for (int i = 1; i < this->argc; ++i) if (!std::strcmp(this->argv[i],"-ignore")) shouldIgnore = true;
     if(this->contains("redirect")) {
         auto rule = this->parseRedirectRule();        
         return std::make_shared<FilterRule>(rule,-1);
@@ -152,24 +155,24 @@ std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
     bool save = this->contains("-save");
     if(layer == "L2") {
         auto rule = this->parseL2Rule();
-        filterRule = std::make_shared<FilterRule>(rule,RID,save);
+        filterRule = std::make_shared<FilterRule>(rule,RID,save,shouldIgnore);
         return filterRule;
     }
     if(layer == "L3") {
         auto rule = this->parseL3Rule();
-        filterRule = std::make_shared<FilterRule>(rule,RID,save);
+        filterRule = std::make_shared<FilterRule>(rule,RID,save,shouldIgnore);
         return filterRule;
     }
     
     if(layer == "L4Simple") {
         auto rule = this->parseSimpleL4Rule();
-        filterRule = std::make_shared<FilterRule>(rule,RID,save);
+        filterRule = std::make_shared<FilterRule>(rule,RID,save,shouldIgnore);
         return filterRule;
     }
 
     if(layer == "L4TCP") {
         auto rule = this->parseL4TCPRule();
-        filterRule = std::make_shared<FilterRule>(rule,RID,save);
+        filterRule = std::make_shared<FilterRule>(rule,RID,save,shouldIgnore);
         return filterRule;
     }
 

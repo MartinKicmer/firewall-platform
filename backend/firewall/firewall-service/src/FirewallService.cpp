@@ -50,19 +50,29 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
             parser->printL4Layer(PacketParser::PduType::TCPPACKET);
             auto blockingRule = fw->filterList->checkAllRules();
             if (blockingRule != nullptr) {
-                std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
-                fw->filterList->printFilterRuleInfo(blockingRule);
-                permit = false; 
+                if (blockingRule->shouldIgnore()) std::cout << "IGNORING PACKET\n\n\n\n" << std::endl;
+                if (!blockingRule->shouldIgnore()) {
+                    std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
+                    fw->filterList->printFilterRuleInfo(blockingRule);
+                }
+                permit = blockingRule->shouldIgnore() ? true : false;
             }
 
             if (fw->packetRedirector->canRedirect()) {
+                if (blockingRule) {
+                    if (blockingRule->shouldIgnore()) {
+                        std::cout << "IGNORING PACKET\n\n\n\n";
+                        return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
+                    }
+                }
                 auto ruleWrap = fw->packetRedirector->getRule();
                 if (ruleWrap && ruleWrap->getRule()) {
                     if ((ruleWrap->getRule()->permit && !blockingRule) ||
                         (!ruleWrap->getRule()->permit && blockingRule)) {
-                        fw->packetRedirector->redirectPacket(parser);
-                    }
+                            fw->packetRedirector->redirectPacket(parser);
+                        }
                 }
+
             }
 
         } catch (const std::exception& e) {
