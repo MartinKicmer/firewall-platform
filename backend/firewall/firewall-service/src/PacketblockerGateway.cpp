@@ -27,7 +27,8 @@ void PacketblockerGateway::sendSelectedRules(std::shared_ptr<FilterRule> rule_) 
         if(rule_->getID() == -1) {
             rules = logger.findRulesByProperties(rule_);
         } else {
-            rules.push_back(logger.findRulesByID(rule_->getID()));
+            auto foundRule = logger.findRulesByID(rule_->getID());
+            if (foundRule) rules.push_back(foundRule);
         }
     }
     MQConnector connector(this->mqPath);
