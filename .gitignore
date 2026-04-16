@@ -2,4 +2,6 @@ backend/firewall/firewall-service/build/
 backend/firewall/packet-blocker/build/
 frontend/fireWallClient/node_modules/
 frontend/fireWallClient/.env
+frontend/fireWallClient/.vscode
+frontend/fireWallClient/home/martinkicmer/.ssh
 .vscode/
