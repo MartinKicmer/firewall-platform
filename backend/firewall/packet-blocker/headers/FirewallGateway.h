@@ -5,6 +5,7 @@
 #include "../../firewall-service/headers/FilterRule.h"
 #include "../../firewall-service/headers/MQConnector.h"
 #include <thread>
+#include <csignal>
 class FirewallGateway {
 
 public:

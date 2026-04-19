@@ -1,7 +1,20 @@
 #include "../headers/FirewallGateway.h"
 #include <memory>
 
+static std::string global_mq_path;
+
+void cleanup_handler(int signum) {
+    if (!global_mq_path.empty()) {
+        mq_unlink(global_mq_path.c_str());
+    }
+    exit(signum);
+}
+
 void FirewallGateway::printRedirectedPackets() {
+    global_mq_path = "/firewallRedirect";
+
+    std::signal(SIGINT, cleanup_handler);
+    std::signal(SIGTERM, cleanup_handler);
      this->helper = std::thread([]() { 
                 MQConnector reader("/firewallRedirect");
                 reader.create(); 

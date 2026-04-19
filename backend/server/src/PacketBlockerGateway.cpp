@@ -62,7 +62,7 @@ void PacketBlockerGateway::printRedirectedPackets(std::shared_ptr<WebSocketServi
                 std::lock_guard<std::mutex> lock(params.mtx);
                 currentLayer = params.layer;
                 currentPermit = params.permit;
-                restart.store(false);  // klíčová oprava
+                restart.store(false);
             }
 
             auto child = boost::process::child(
@@ -87,7 +87,7 @@ void PacketBlockerGateway::printRedirectedPackets(std::shared_ptr<WebSocketServi
             {
                 std::lock_guard<std::mutex> lock(processMtx);
                 if (this->prActive && this->prActive->running()) {
-                    this->prActive->terminate();
+                    kill(this->prActive->id(), SIGTERM);
                     this->prActive->wait();
                 }
             }
