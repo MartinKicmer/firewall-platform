@@ -18,7 +18,7 @@
 #include <atomic>
 #include "FilterRuleLogger.h"
 #include <libnetfilter_queue/libnetfilter_queue.h>
-
+#include <shared_mutex>
 #ifndef NF_ACCEPT
 #define NF_ACCEPT 1
 #endif
@@ -49,11 +49,7 @@ public:
 
     };
     FirewallService();
-    ~FirewallService() {
-        if(this->packetBlockerT.joinable()) {
-            this->packetBlockerT.join();
-        }
-    }
+    ~FirewallService();
     void run(const std::string& standardPath);
     void loadSavedRules();
     void removeRuleFromMemory(std::shared_ptr<FilterRule> rule);
@@ -68,7 +64,8 @@ private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
     void startPacketBlockerCommunication();
     void writePacketBlockerData(const std::string& data);
-    std::unique_ptr<KernelSocket, void(*)(KernelSocket*)> kernelSocket;
+    std::vector<std::unique_ptr<KernelSocket>> kernelSockets; 
+    std::vector<std::thread> kernelThreads;
     std::unique_ptr<Config> config = nullptr;
     std::thread packetBlockerT;
     bool redirect;

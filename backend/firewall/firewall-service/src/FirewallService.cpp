@@ -36,11 +36,7 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
 
     if (len >= 0) {
         try {
-            std::array<uint8_t, BUFSIZ> buf{};
-            std::memcpy(buf.data(), payload, std::min(static_cast<std::size_t>(len), buf.size()));
-
-            auto packetTuple = std::make_tuple(len, buf);
-            auto parser = std::make_shared<PacketParser>(packetTuple);
+            auto parser = std::make_shared<PacketParser>(payload,len);
 
             fw->filterList->setParser(parser);
 
@@ -90,25 +86,38 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
 }
 
 
+FirewallService::~FirewallService() {
+    if(this->packetBlockerT.joinable()) {
+        this->packetBlockerT.join();
+    }
+}
+
+
+
 void FirewallService::deleteKernelSocket(KernelSocket *ks) {
         delete ks;
 }
 
 FirewallService::FirewallService() 
-            : config(nullptr), redirect(false),
-            kernelSocket(new KernelSocket(this), &FirewallService::deleteKernelSocket) 
+            : config(nullptr), redirect(false)
 {
     try {
         this->filterList = std::make_shared<FilterRuleList>();
         this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
         this->packetRedirector = std::make_shared<PacketRedirector>();
         this->packetBlockerGateway = std::make_unique<PacketblockerGateway>("/fireWallBlocker",this->filterList);
+        int numQueues = std::thread::hardware_concurrency();
+        if (numQueues == 0) numQueues = 2;
+        for (int i = 0; i < numQueues; ++i) {
+            auto sock = std::make_unique<KernelSocket>(this, i);
+            this->kernelThreads.emplace_back(&KernelSocket::run, sock.get());
+            this->kernelSockets.push_back(std::move(sock));
+        }
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         std::exit(EXIT_FAILURE);
     }
 }
-
 
 void FirewallService::loadSavedRules() {
     auto logger = FilterRuleLogger::getInstance();
@@ -124,8 +133,10 @@ void FirewallService::run(const std::string& standardPath) {
         this->config = this->loadFromConfig(standardPath);
         this->loadSavedRules();
         std::cout << this->config << std::endl;
-        while(1) {
-            this->kernelSocket->recieveData();
+        for (auto& t : this->kernelThreads) {
+            if (t.joinable()) {
+                t.join(); 
+            }
         }
     } catch( const std::exception& e) {
         std::cerr << e.what() << std::endl;

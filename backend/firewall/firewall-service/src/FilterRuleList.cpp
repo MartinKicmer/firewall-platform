@@ -1,11 +1,13 @@
 #include "../headers/FilterRuleList.h"
 
 void FilterRuleList::addRule(std::shared_ptr<FilterRule> filterRule) {
+    std::unique_lock<std::shared_mutex> lock(rulesMtx);
     this->filterRules[filterRule->getID()] = filterRule;
     std::cout << "Rule added\n";
 }
 
 std::shared_ptr<FilterRule> FilterRuleList::checkAllRules() {
+    std::shared_lock<std::shared_mutex> lock(rulesMtx);
     for (auto& [ID,rule] : this->filterRules) {
         if(!this->packetParser) throw std::runtime_error("Filter list doesnt have parser\n");
         rule->setComparer(this->ruleComparer);
@@ -17,6 +19,7 @@ std::shared_ptr<FilterRule> FilterRuleList::checkAllRules() {
 }
 
 void FilterRuleList::removeRule(std::shared_ptr<FilterRule> filterRule) {
+    std::unique_lock<std::shared_mutex> lock(rulesMtx);
     this->filterRules.erase(filterRule->getID());
 }
 

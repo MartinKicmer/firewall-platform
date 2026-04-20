@@ -34,24 +34,20 @@ void PacketParser::printL4Layer(PacketParser::PduType type) {
 
 
 void PacketParser::initPDUS() {
-    const auto& [payloadLen, payload] = this->data;
-    if (payloadLen == 0) return;
-
+    if (rawLen == 0 || rawData == nullptr) return;
     for(int i = 0; i <= 3; ++i) this->pdus[i] = nullptr;
-
-    const uint8_t* rawData = payload.data();
     std::shared_ptr<AbstractPDU> l3Layer = nullptr;
 
     try {
 
         if (rawData[0] == 0x45 || (rawData[0] & 0xF0) == 0x60) {
-            auto ipv4 = std::make_shared<IPv4Datagram>(rawData, payloadLen);
+            auto ipv4 = std::make_shared<IPv4Datagram>(rawData, rawLen);
             ipv4->parse();
             pdus[PduType::IPV4DATAGRAM] = ipv4;
             l3Layer = ipv4;
         } 
         else {
-            auto frame = std::make_shared<EthernetFrame>(rawData, payloadLen);
+            auto frame = std::make_shared<EthernetFrame>(rawData, rawLen);
             frame->parse(); 
             pdus[PduType::ETHERNETFRAME] = frame;
             l3Layer = frame->getNextLayer();

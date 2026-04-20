@@ -1,23 +1,16 @@
 #pragma once
 #include <cstddef>
 #include <string>
-#include <stdexcept>   
-#include <cstring>     
-#include <netpacket/packet.h> 
-#include <net/ethernet.h>  
-#include <net/if.h>        
-#include <arpa/inet.h>    
-#include <unistd.h>        
-#include <iostream>
+#include <vector>
 #include <memory>
-#include "EthernetFrame.h"
-#include "IPv4Datagram.h"
+#include <tuple>
+#include <arpa/inet.h>
 #include <netinet/ip.h>
-#include <array>
-#include "AbstractPDU.h"
-#include "UdpDatagram.h"
 #include <unordered_map>
+#include "AbstractPDU.h"
+#include "IPv4Datagram.h"
 #include "TCPHeader.h"
+#include "EthernetFrame.h"
 
 class PacketParser {
 public:
@@ -27,7 +20,9 @@ public:
         UDPDATAGRAM = 2,
         TCPPACKET = 3
     };
-    PacketParser(const std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data_ ) : data(data_) {
+
+    PacketParser(const uint8_t* payload, size_t len) 
+        : rawData(payload), rawLen(len) {
         this->initPDUS();
     }
 
@@ -35,14 +30,12 @@ public:
     void printL3Layer(PacketParser::PduType type);
     void printL4Layer(PacketParser::PduType type);
     void initPDUS();
-
     [[nodiscard]] std::shared_ptr<EthernetFrame> getEthernetFrame() { 
         return std::static_pointer_cast<EthernetFrame>(this->pdus[PduType::ETHERNETFRAME]);
     }
-    [[nodiscard]] std::shared_ptr<IPv4Datagram> getIPv4Datagram()   {   
+    [[nodiscard]] std::shared_ptr<IPv4Datagram> getIPv4Datagram() {   
         return std::static_pointer_cast<IPv4Datagram>(this->pdus[PduType::IPV4DATAGRAM]);
     }
-
     [[nodiscard]] std::shared_ptr<UdpDatagram> getUDPDatagram() {
         return std::static_pointer_cast<UdpDatagram>(this->pdus[PduType::UDPDATAGRAM]);
     }
@@ -51,6 +44,8 @@ public:
     }  
     
 private:
-    std::unordered_map<int,std::shared_ptr<AbstractPDU>> pdus;
-    const std::tuple<ssize_t, std::array<uint8_t, BUFSIZ>>& data;
+    std::unordered_map<int, std::shared_ptr<AbstractPDU>> pdus;
+
+    const uint8_t* rawData;
+    size_t rawLen;
 };

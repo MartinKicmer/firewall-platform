@@ -2,6 +2,8 @@
 #include "FilterRule.h"
 #include <unordered_map>
 #include "RuleComparer.h"
+#include <shared_mutex>
+#include <mutex>         
 class FilterRuleList {
 public:
     FilterRuleList(std::shared_ptr<PacketParser> packetParser_ = nullptr) 
@@ -21,6 +23,6 @@ private:
     std::unordered_map<int,std::shared_ptr<FilterRule>> filterRules;
     std::shared_ptr<PacketParser> packetParser;
     std::shared_ptr<RuleComparer> ruleComparer;
-
+    mutable std::shared_mutex rulesMtx;
 
 };
