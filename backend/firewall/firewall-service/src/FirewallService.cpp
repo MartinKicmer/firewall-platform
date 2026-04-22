@@ -70,7 +70,6 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
             if (fw->packetRedirector->canRedirect()) {
                 if (blockingRule) {
                     if (blockingRule->shouldIgnore()) {
-                        std::cout << "IGNORING PACKET\n\n\n\n";
                         return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
                     }
                 }
@@ -86,15 +85,12 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
 
         } catch (const std::exception& e) {
             std::cerr << "Parser error (ignoring for safety): " << e.what() << std::endl;
+            std::exit(EXIT_FAILURE);
         } catch (...) {
             std::cerr << "Unknown critical error in callback logic!" << std::endl;
+            std::exit(EXIT_FAILURE);
         }
     }
-
-    if (permit) {
-        std::cout << "-------\nPACKET PASSED\n-------" << std::endl;
-    }
-    std::cout << "DEBUG: Verdict sent, after parsing rules: " << permit << std::endl;
     return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
 }
 
