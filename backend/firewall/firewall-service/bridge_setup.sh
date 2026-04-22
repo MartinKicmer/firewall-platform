@@ -10,7 +10,6 @@ if [ -z "${CONFIG_FILE}" ] || [ -z "${X_QUEUES}" ]; then
     exit 1
 fi
 
-# --- VÝPOČET ROZSAHU FRONT ---
 if [ "$X_QUEUES" -lt 1 ]; then
     echo "[!] Number of queues must be at least 1"
     exit 1
@@ -34,6 +33,11 @@ if [ -z "$INPUT_IF" ] || [ -z "$OUTPUT_IF" ]; then
     echo "[!] Could not parse interfaces. Check your config file format."
     exit 1
 fi
+
+
+echo "[*] Disabling Offloading (TSO, GSO, GRO) on $INPUT_IF and $OUTPUT_IF..."
+sudo ethtool -K "$INPUT_IF" tso off gso off gro off || echo "[!] Failed to set ethtool on $INPUT_IF"
+sudo ethtool -K "$OUTPUT_IF" tso off gso off gro off || echo "[!] Failed to set ethtool on $OUTPUT_IF"
 
 BRIDGE_NAME="brfw"
 

@@ -21,11 +21,12 @@ void KernelSocket::init() {
 
     std::cout << "Kernel socket initialized with fd: " << this->fd << std::endl;
 }
+
 void KernelSocket::setCallback() {
     this->queueHandle = nfq_create_queue(this->handle, this->queueNum, 
                                         &FirewallService::handlePacketCallback, 
                                         this->service);
-
+    nfq_set_mode(this->queueHandle, NFQNL_COPY_PACKET, 0xffff);
     if (!this->queueHandle) {
         throw std::runtime_error("Could not create nfq queue 0\n");
     }
