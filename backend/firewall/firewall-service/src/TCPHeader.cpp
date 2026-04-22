@@ -7,9 +7,9 @@
 
 void TCPHeader::parse() {
  
-    if(this->payload.size() <= 0) throw std::runtime_error("Payload too small for TCP header\n");
-    const uint8_t* data = &this->payload[0];
-    const struct tcphdr* tcpHeader = reinterpret_cast<const struct tcphdr*>(data);
+    if(this->payloadSize <= 0) throw std::runtime_error("Payload too small for TCP header\n");
+    const uint8_t* data = this->payloadData;
+    auto tcpHeader = reinterpret_cast<const struct tcphdr*>(data);
 
 
     this->sPort = ntohs(tcpHeader->source);
@@ -22,11 +22,11 @@ void TCPHeader::parse() {
     this->flags = data[13];
     uint8_t headerLength = tcpHeader->doff * 4;
 
-    if (this->payload.size() < headerLength) {
+    if (this->payloadSize < headerLength) {
         throw std::runtime_error("Payload smaller than TCP header offset indicates\n");
     }
     const uint8_t* nextPayload = data + sizeof(struct tcphdr);
-    std::size_t nextPayloadSize = this->payload.size() - sizeof(struct tcphdr);
+    std::size_t nextPayloadSize = this->payloadSize - sizeof(struct tcphdr);
 
     this->parseNext(nextPayload, nextPayloadSize);
 
@@ -44,8 +44,3 @@ nlohmann::json  TCPHeader::serialize() const {
         {"urg_pointer", urgPointer}
     };
 }
-
-void TCPHeader::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) {
-    return;
-}
-

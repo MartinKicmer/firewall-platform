@@ -12,13 +12,11 @@
 #include <nlohmann/json.hpp>
 #include "UdpDatagram.h"
 #include "TCPHeader.h"
+#include  "DTOS.h"
 class IPv4Datagram : public AbstractPDU {
 public:
-    IPv4Datagram(
-        const uint8_t* payload_,
-        std::size_t payloadLen_
-    )
-        : AbstractPDU(payload_,payloadLen_)
+    IPv4Datagram()
+        : AbstractPDU()
         , version(0)
         , header_length(0)
         , service_type(0)
@@ -33,7 +31,6 @@ public:
 
     void parse() override;
     void parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) override;
-
     friend std::ostream& operator<<(std::ostream& o,const IPv4Datagram& d) {
 
         o << "---IPv4 Datagram ---" << std::endl;
@@ -43,8 +40,7 @@ public:
         o << "Total length: " << d.getTotalLength() << " B" << std::endl;
         o << "TTL: " << static_cast<int>(d.getTTL()) << " | Protokol: " << static_cast<int>(d.getProtocol()) << std::endl;
         o << "Checksum: 0x" << std::hex << d.getChecksum() << std::dec << std::endl;
-        o << "Payload size: " << d.getPayload().size(
-        ) << " B" << std::endl;
+        o << "Payload size: " << d.getPayloadSize() << " B" << std::endl;
         o << "------------------------------" << std::endl;
 
         return o;
@@ -62,10 +58,16 @@ public:
     [[nodiscard]]  uint16_t getChecksum() const { return this->checksum; }
     [[nodiscard]]  const  std::string& getSRC() const { return this->src; }
     [[nodiscard]]  const  std::string& getDST() const { return this->dest; }
-    [[nodiscard]]  const   std::vector<uint8_t>& getPayload() const { return this->payload; }
 
-    nlohmann::json serialize() const;
+    [[nodiscard]] nlohmann::json serialize() const;
     static std::shared_ptr<IPv4Datagram> deserialize(const nlohmann::json& j);
+
+    [[nodiscard]] IPv4DTO getDTO() const {
+        return IPv4DTO{
+            srcIp, destIp, version, header_length, service_type,
+            total_length, identification, ttl, protocol, checksum
+        };
+    }
 
 private:
     uint8_t version;        
@@ -78,4 +80,7 @@ private:
     uint16_t checksum;
     std::string src;
     std::string dest;
+
+    uint32_t srcIp;
+    uint32_t destIp;
 };

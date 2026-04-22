@@ -6,22 +6,25 @@
 #include <vector>
 class AbstractPDU {
 public:
-    AbstractPDU(
-        const uint8_t* payload_,
-        std::size_t payloadLen_
-    ) {
-        this->payloadLen = payloadLen_;
-        this->payload.assign(payload_,payload_ + payloadLen_);
+    AbstractPDU() = default;
+    virtual ~AbstractPDU() = default;
+
+    void init(const uint8_t* payload_, std::size_t payloadLen_) {
+        this->payloadData = payload_;
+        this->payloadSize = payloadLen_;
+        this->nextLayer = nullptr;
     }
 
-    virtual ~AbstractPDU() = default;
     virtual void parse() = 0;
-    virtual void parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) = 0;
-    std::shared_ptr<AbstractPDU> getNextLayer() { return this->nextLayer; }
+    virtual void parseNext(const uint8_t* nextPayload, std::size_t nextPayloadSize) = 0;
+    AbstractPDU* getNextLayer() { return nextLayer; }
+    void setNextLayer(AbstractPDU* next) { nextLayer = next; }
+
+    [[nodiscard]] const uint8_t* getPayload() const { return payloadData; }
+    [[nodiscard]] std::size_t getPayloadSize() const { return payloadSize; }
 
 protected:
-    std::shared_ptr<AbstractPDU> nextLayer;
-    std::size_t payloadLen;
-    std::vector<uint8_t> payload;
-
+    AbstractPDU* nextLayer = nullptr;
+    const uint8_t* payloadData = nullptr;
+    std::size_t payloadSize = 0;
 };

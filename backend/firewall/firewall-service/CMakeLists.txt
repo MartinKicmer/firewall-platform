@@ -42,6 +42,11 @@ add_executable(firewallService
   headers/UdpDatagram.h
   headers/TCPHeader.h
   headers/KernelSocket.h
+    headers/DebugHandler.h
+    headers/DTOS.h
+    headers/LoggingBuffer.h
+    src/DebugHandler.cpp
+    src/LoggingBuffer.cpp
 )
 target_compile_options(firewallService PRIVATE      
         -Wextra         

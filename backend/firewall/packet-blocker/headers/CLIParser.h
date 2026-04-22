@@ -8,6 +8,7 @@
 #include <iostream>
 #include <tuple>
 #include <unordered_map>
+#include  "FileMonitor.h"
 class CLIParser {
 public:
     CLIParser(int argc,const char** argv) 
@@ -15,6 +16,8 @@ public:
         this->protocols["UDP"] = 17;
         this->protocols["ICMP"] = 1;
         this->protocols["TCP"] = 6;
+
+        this->monitor = std::make_shared<FileMonitor>("../../firewall-service/debug.bin");
     }
     std::shared_ptr<FilterRule> parseCLIArguments();
 
@@ -23,7 +26,7 @@ private:
     const int argc;
     std::unordered_map<std::string,int> protocols;
     InteractiveCLIMode interactiveCLIMode;
-
+    std::shared_ptr<FileMonitor> monitor = nullptr;
     bool contains(const std::string& arg);
 
     std::shared_ptr<L4SimpleRule> parseSimpleL4Rule();

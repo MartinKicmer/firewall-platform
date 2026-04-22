@@ -12,12 +12,23 @@
 #include <iostream>
 #include <cstring>
 #include <algorithm>
-#include <netinet/in.h> // pro ntohl
+#include <netinet/in.h>
+
+static bool END_DEBUG = false;
+void debug_handler(int signum) {
+    END_DEBUG = true;
+}
+
+
+bool FirewallService::STOP_DEBUG() {
+    return END_DEBUG;
+}
+
 
 int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
-                        struct nfgenmsg* nfmsg,
-                        struct nfq_data* nfa,
-                        void* data) {
+                                          struct nfgenmsg* nfmsg,
+                                          struct nfq_data* nfa,
+                                          void* data) {
     FirewallService* fw = static_cast<FirewallService*>(data);
 
     uint32_t id = 0;
@@ -36,14 +47,17 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
 
     if (len >= 0) {
         try {
-            auto parser = std::make_shared<PacketParser>(payload,len);
 
-            fw->filterList->setParser(parser);
-
-            parser->printL2Layer(PacketParser::PduType::ETHERNETFRAME);
-            parser->printL3Layer(PacketParser::PduType::IPV4DATAGRAM);
-            parser->printL4Layer(PacketParser::PduType::UDPDATAGRAM);
-            parser->printL4Layer(PacketParser::PduType::TCPPACKET);
+            fw->packetParser->initParser(payload,len);
+            fw->filterList->setParser(fw->packetParser);
+            if (fw->filterList->getRules().empty()) {
+                if (fw->debugModeActive()) {
+                    auto& logBuf = fw->getLogBuffer();
+                    auto record = fw->packetParser->getCombinedRecord(true);
+                    logBuf.write(record);
+                }
+                return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
+            }
             auto blockingRule = fw->filterList->checkAllRules();
             if (blockingRule != nullptr) {
                 if (blockingRule->shouldIgnore()) std::cout << "IGNORING PACKET\n\n\n\n" << std::endl;
@@ -53,7 +67,11 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
                 }
                 permit = blockingRule->shouldIgnore() ? true : false;
             }
-
+            if (fw->debugModeActive()) {
+                auto& logBuf = fw->getLogBuffer();
+                auto record = fw->packetParser->getCombinedRecord(permit);
+                logBuf.write(record);
+            }
             if (fw->packetRedirector->canRedirect()) {
                 if (blockingRule) {
                     if (blockingRule->shouldIgnore()) {
@@ -65,7 +83,7 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
                 if (ruleWrap && ruleWrap->getRule()) {
                     if ((ruleWrap->getRule()->permit && !blockingRule) ||
                         (!ruleWrap->getRule()->permit && blockingRule)) {
-                            fw->packetRedirector->redirectPacket(parser);
+                            fw->packetRedirector->redirectPacket(fw->packetParser);
                         }
                 }
 
@@ -98,21 +116,25 @@ void FirewallService::deleteKernelSocket(KernelSocket *ks) {
         delete ks;
 }
 
-FirewallService::FirewallService() 
-            : config(nullptr), redirect(false)
-{
+FirewallService::FirewallService(bool debug_,int noQueues_)
+            : config(nullptr), redirect(false),debug(debug_),selectedNoQueues(noQueues_) {
     try {
+        if (debug_) {
+            std::cout << "DEBUG MODE ACTIVE" << std::endl;
+            this->debugHandler = std::make_shared<DebugHandler>("../debug.bin");
+            this->debugThread  = std::thread(&DebugHandler::handleLogging,this->debugHandler,this);
+        }
+        std::signal(SIGINT, debug_handler);
         this->filterList = std::make_shared<FilterRuleList>();
         this->packetBlockerT = std::thread(&FirewallService::startPacketBlockerCommunication,this);
         this->packetRedirector = std::make_shared<PacketRedirector>();
         this->packetBlockerGateway = std::make_unique<PacketblockerGateway>("/fireWallBlocker",this->filterList);
-        int numQueues = std::thread::hardware_concurrency();
-        if (numQueues == 0) numQueues = 2;
-        for (int i = 0; i < numQueues; ++i) {
+        for (int i = 0; i < this->selectedNoQueues; ++i) {
             auto sock = std::make_unique<KernelSocket>(this, i);
             this->kernelThreads.emplace_back(&KernelSocket::run, sock.get());
             this->kernelSockets.push_back(std::move(sock));
         }
+        this->packetParser = std::make_shared<PacketParser>();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         std::exit(EXIT_FAILURE);

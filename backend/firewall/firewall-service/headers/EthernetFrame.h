@@ -10,20 +10,15 @@
 #include "IPv4Datagram.h"
 #include <arpa/inet.h>
 #include <nlohmann/json.hpp>
+#include  "DTOS.h"
 class EthernetFrame : public AbstractPDU {
 public:
-    EthernetFrame(
-        const uint8_t* payload_,
-        std::size_t payloadLen_
-    ) : AbstractPDU(payload_,payloadLen_),destinationMAC("none"),sourceMAC("none"),etherType(0) {}
+    EthernetFrame() : AbstractPDU(),destinationMAC("none"),sourceMAC("none"),etherType(0) {}
 
-    std::tuple<std::string, std::string> getMACAddresses() const { return std::make_tuple(this->sourceMAC,this->destinationMAC); }
-    uint16_t getEtherType() const { return etherType; }
-    const std::vector<uint8_t>& getPayload() const { return this->payload; }
-
+    [[nodiscard]]  std::tuple<std::string, std::string> getMACAddresses() const { return std::make_tuple(this->sourceMAC,this->destinationMAC); }
+    [[nodiscard]] uint16_t getEtherType() const { return etherType; }
     void parse() override;
     void parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) override;
-
     static std::string fromBytesToMacString(const unsigned char* mac);
     friend std::ostream& operator<<(std::ostream& o, const EthernetFrame& e) {
         const auto& [source,dest] = e.getMACAddresses();
@@ -34,13 +29,18 @@ public:
 
         return o;
     }
+    [[nodiscard]] EthernetDTO getDTO() const {
+        EthernetDTO dto{};
+        std::memcpy(dto.srcMac, this->srcMac, 6);
+        std::memcpy(dto.destMac, this->destMac, 6);
+        dto.etherType = this->etherType;
+        return dto;
+    }
 
-    nlohmann::json serialize() const;
+    [[nodiscard]] nlohmann::json serialize() const;
 
-    // 2. DESERIALIZACE z JSON (pro načítání pravidel)
     static std::shared_ptr<EthernetFrame> deserialize(const nlohmann::json& j) {
-        // Vytvoříme prázdný frame (payload bude prázdný)
-        auto frame = std::make_shared<EthernetFrame>(nullptr, 0);
+        auto frame = std::make_shared<EthernetFrame>();
         
         if (j.contains("source_mac")) frame->sourceMAC = j["source_mac"];
         if (j.contains("dest_mac")) frame->destinationMAC = j["dest_mac"];
@@ -51,5 +51,7 @@ public:
 private:
     std::string destinationMAC;
     std::string sourceMAC;
+    uint8_t srcMac[6];
+    uint8_t destMac[6];
     uint16_t etherType;
 };

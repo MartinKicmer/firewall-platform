@@ -7,24 +7,24 @@
 #include <iostream>
 #include <ostream>
 #include <nlohmann/json.hpp>
+#include  "DTOS.h"
 class TCPHeader : public AbstractPDU {
 public:
-    TCPHeader(const uint8_t* payload_, std::size_t payloadLen_) 
-        : AbstractPDU(payload_, payloadLen_) {}
-    uint16_t getSourcePort() const { return sPort; }
-    uint16_t getDestPort() const { return dPort; }
-    uint32_t getSeqNumber() const { return seqNumber; }
-    uint32_t getAckNumber() const { return ackNumber; }
-    uint16_t getWindowSize() const { return windowSize; }
-    uint8_t  getFlags() const { return flags; }
-    uint16_t getChecksum() const { return this->checkSum; }
+    TCPHeader()
+        : AbstractPDU() {}
+    [[nodiscard]] uint16_t getSourcePort() const { return sPort; }
+    [[nodiscard]] uint16_t getDestPort() const { return dPort; }
+    [[nodiscard]] uint32_t getSeqNumber() const { return seqNumber; }
+    [[nodiscard]] uint32_t getAckNumber() const { return ackNumber; }
+    [[nodiscard]] uint16_t getWindowSize() const { return windowSize; }
+    [[nodiscard]] uint8_t  getFlags() const { return flags; }
+    [[nodiscard]] uint16_t getChecksum() const { return this->checkSum; }
     bool isSyn() const { return flags & TH_SYN; }
     bool isAck() const { return flags & TH_ACK; }
     bool isFin() const { return flags & TH_FIN; }
 
     void parse() override;
-    void parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) override;
-
+    void parseNext(const uint8_t* /*nextPayload*/, std::size_t /*nextPayloadSize*/) override {};
     friend std::ostream& operator<<(std::ostream& o,const TCPHeader& hdr) {
         o << "TCP Header\n------------\n"
         << "  Source Port:      " << hdr.getSourcePort() << "\n"
@@ -56,12 +56,12 @@ public:
         return o;
     }
 
-    nlohmann::json serialize() const;
+    [[nodiscard]] nlohmann::json serialize() const;
 
     static std::shared_ptr<TCPHeader> deserialize(const nlohmann::json& j) {
-        auto tcp = std::make_shared<TCPHeader>(nullptr,0);
-        if (j.contains("source_port")) tcp->sPort = j.at("source_port").get<uint16_t>();
-        if (j.contains("dest_port"))   tcp->dPort = j.at("dest_port").get<uint16_t>();
+        auto tcp = std::make_shared<TCPHeader>();
+        if (j.contains("source_port")) tcp->sPort = j.at("source_port").get<int16_t>();
+        if (j.contains("dest_port"))   tcp->dPort = j.at("dest_port").get<int16_t>();
         if (j.contains("seq_number"))  tcp->seqNumber = j.at("seq_number").get<uint32_t>();
         if (j.contains("ack_number"))  tcp->ackNumber = j.at("ack_number").get<uint32_t>();
         if (j.contains("flags"))       tcp->flags = j.at("flags").get<uint8_t>();
@@ -70,8 +70,13 @@ public:
         if (j.contains("urg_pointer")) tcp->urgPointer = j.at("urg_pointer").get<uint16_t>();
 
         return tcp;
-}
-
+    }
+    [[nodiscard]] TcpDTO getDTO() const {
+        return TcpDTO{
+            sPort, dPort, seqNumber, ackNumber, flags,
+            windowSize, checkSum, urgPointer
+        };
+    }
 
 private:
     short sPort = 0;

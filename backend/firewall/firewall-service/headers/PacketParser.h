@@ -11,7 +11,8 @@
 #include "IPv4Datagram.h"
 #include "TCPHeader.h"
 #include "EthernetFrame.h"
-
+#include "DTOS.h"
+#include <optional>
 class PacketParser {
 public:
     enum PduType {
@@ -21,31 +22,70 @@ public:
         TCPPACKET = 3
     };
 
-    PacketParser(const uint8_t* payload, size_t len) 
-        : rawData(payload), rawLen(len) {
-        this->initPDUS();
+    PacketParser()
+        : rawData(nullptr), rawLen(0) {}
+
+    void initParser(const uint8_t* payload, size_t len);
+    void printL2Layer();
+    void printL3Layer();
+    void printL4Layer();
+
+    void initPDUS();
+    [[nodiscard]] CombinedLogRecord getCombinedRecord(bool verdict) const;
+
+    [[nodiscard]] EthernetFrame* getEthernetFrame() {
+        return (pdus[ETHERNETFRAME] != nullptr) ? &ethObj : nullptr;
     }
 
-    void printL2Layer(PacketParser::PduType type);
-    void printL3Layer(PacketParser::PduType type);
-    void printL4Layer(PacketParser::PduType type);
-    void initPDUS();
-    [[nodiscard]] std::shared_ptr<EthernetFrame> getEthernetFrame() { 
-        return std::static_pointer_cast<EthernetFrame>(this->pdus[PduType::ETHERNETFRAME]);
+    [[nodiscard]] IPv4Datagram* getIPv4Datagram() {
+        return (pdus[IPV4DATAGRAM] != nullptr) ? &ipv4Obj : nullptr;
     }
-    [[nodiscard]] std::shared_ptr<IPv4Datagram> getIPv4Datagram() {   
-        return std::static_pointer_cast<IPv4Datagram>(this->pdus[PduType::IPV4DATAGRAM]);
+
+    [[nodiscard]] UdpDatagram* getUDPDatagram() {
+        return (pdus[UDPDATAGRAM] != nullptr) ? &udpObj : nullptr;
     }
-    [[nodiscard]] std::shared_ptr<UdpDatagram> getUDPDatagram() {
-        return std::static_pointer_cast<UdpDatagram>(this->pdus[PduType::UDPDATAGRAM]);
+
+    [[nodiscard]] TCPHeader* getTCPPACKET() {
+        return (pdus[TCPPACKET] != nullptr) ? &tcpObj : nullptr;
     }
-    [[nodiscard]] std::shared_ptr<TCPHeader> getTCPPACKET() {
-        return std::static_pointer_cast<TCPHeader>(this->pdus[PduType::TCPPACKET]);
-    }  
+
+    [[nodiscard]] std::optional<EthernetDTO> getL2DTO() const {
+        if (pdus[PduType::ETHERNETFRAME]) {
+            return dynamic_cast<EthernetFrame*>(pdus[PduType::ETHERNETFRAME])->getDTO();
+        }
+        return std::nullopt;
+    }
+
+    [[nodiscard]] std::optional<IPv4DTO> getL3DTO() const {
+        if (pdus[PduType::IPV4DATAGRAM]) {
+            return dynamic_cast<IPv4Datagram*>(pdus[PduType::IPV4DATAGRAM])->getDTO();
+        }
+        return std::nullopt;
+    }
+
+    [[nodiscard]] std::optional<TcpDTO> getL4TcpDTO() const {
+        if (pdus[PduType::TCPPACKET]) {
+            return dynamic_cast<TCPHeader*>(pdus[PduType::TCPPACKET])->getDTO();
+        }
+        return std::nullopt;
+    }
+
+    [[nodiscard]] std::optional<UdpDTO> getL4UdpDTO() const {
+        if (pdus[PduType::UDPDATAGRAM]) {
+            return dynamic_cast<UdpDatagram*>(pdus[PduType::UDPDATAGRAM])->getDTO();
+        }
+        return std::nullopt;
+    }
     
 private:
-    std::unordered_map<int, std::shared_ptr<AbstractPDU>> pdus;
 
     const uint8_t* rawData;
     size_t rawLen;
+
+    EthernetFrame ethObj;
+    IPv4Datagram  ipv4Obj;
+    UdpDatagram   udpObj;
+    TCPHeader     tcpObj;
+
+    AbstractPDU* pdus[4];
 };

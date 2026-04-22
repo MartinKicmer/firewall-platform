@@ -15,10 +15,10 @@ nlohmann::json UdpDatagram::serialize() const {
 }
 
 void UdpDatagram::parse() {
-    if(this->payload.size() <= 0) throw std::runtime_error("Cant parse UDP packet because of not enough size\n");
+    if(this->payloadSize <= 0) throw std::runtime_error("Cant parse UDP packet because of not enough size\n");
 
-    const uint8_t* data = &this->payload[0];
-    const struct udphdr* udp = reinterpret_cast<const struct udphdr*>(data);
+    const uint8_t* data = this->payloadData;
+    auto udp = reinterpret_cast<const struct udphdr*>(data);
 
     uint16_t sourcePort = udp->source;
     uint16_t destPort = udp->dest;
@@ -31,11 +31,7 @@ void UdpDatagram::parse() {
     this->checksum = ntohs(udp->check);
 
     const uint8_t* nextPayloadStart = data + sizeof(struct udphdr);
-    std::size_t nextPayloadSize = this->payloadLen - sizeof(struct udphdr);
+    std::size_t nextPayloadSize = this->payloadSize - sizeof(struct udphdr);
 
     this->parseNext(nextPayloadStart, nextPayloadSize);
-}
-
-void UdpDatagram::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) {
-    //std::cout << nextPayload << nextPayloadSize;
 }

@@ -125,6 +125,9 @@ std::shared_ptr<L4SimpleRule> CLIParser::parseSimpleL4Rule() {
 }
 std::shared_ptr<FilterRule> CLIParser::parseCLIArguments() {
 
+    if (this->contains("-debug")) {
+        this->monitor->monitor();
+    }
     if(this->contains("-interactive")) {
         this->interactiveCLIMode.show();
         auto parsedRule = this->interactiveCLIMode.getParsedFilterRule();

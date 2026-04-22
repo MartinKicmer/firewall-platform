@@ -19,6 +19,9 @@
 #include "FilterRuleLogger.h"
 #include <libnetfilter_queue/libnetfilter_queue.h>
 #include <shared_mutex>
+#include <csignal>
+#include "LoggingBuffer.h"
+#include "DebugHandler.h"
 #ifndef NF_ACCEPT
 #define NF_ACCEPT 1
 #endif
@@ -30,6 +33,9 @@ class KernelSocket;
 class PacketParser;
 class FirewallService {
 public:
+    struct LogBuffer {
+
+    };
     struct Interface {
         std::string name;
         std::string state;
@@ -37,10 +43,10 @@ public:
     struct Config {
         std::vector<Interface> activeInterfaces;
 
-        friend std::ostream& operator<<(std::ostream& o, const std::unique_ptr<Config>& config) {
+        friend std::ostream& operator<<(std::ostream& o, const std::unique_ptr<Config>& config_) {
             o << "Running Config\n";
             o << "Active interfaces\n";
-            for(const auto& i : config->activeInterfaces) {
+            for(const auto& i : config_->activeInterfaces) {
                 o << "interface: " << i.name << " state: " << i.state << std::endl;
             }
             return o;
@@ -48,7 +54,7 @@ public:
         }
 
     };
-    FirewallService();
+    FirewallService(bool debug_,int noQueues_);
     ~FirewallService();
     void run(const std::string& standardPath);
     void loadSavedRules();
@@ -60,6 +66,10 @@ public:
                         void* data);
 
     static void deleteKernelSocket(KernelSocket* ks);
+
+    LoggingBuffer& getLogBuffer() { return  this->logBuffer; }
+    [[nodiscard]] bool debugModeActive() const { return this->debug; }
+    static bool STOP_DEBUG();
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
     void startPacketBlockerCommunication();
@@ -72,4 +82,10 @@ private:
     std::shared_ptr<FilterRuleList> filterList = nullptr;
     std::shared_ptr<PacketRedirector> packetRedirector = nullptr;
     std::unique_ptr<PacketblockerGateway> packetBlockerGateway = nullptr;
+    std::shared_ptr<PacketParser> packetParser = nullptr;
+    bool debug = false;
+    int selectedNoQueues = 1;
+    LoggingBuffer logBuffer;
+    std::shared_ptr<DebugHandler> debugHandler = nullptr;
+    std::thread debugThread;
 };

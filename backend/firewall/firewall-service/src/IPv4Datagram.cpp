@@ -5,16 +5,16 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 void IPv4Datagram::parse() {
-    if (this->payload.empty()) throw std::runtime_error("Empty payload");
+    if (this->payloadSize <= 0) throw std::runtime_error("Empty payload");
 
-    const uint8_t* ipv4Data = this->payload.data();
-    std::size_t totalPayloadLen = this->payload.size();
+    const uint8_t* ipv4Data = this->payloadData;
+    std::size_t totalPayloadLen = this->payloadSize;
 
     if (totalPayloadLen < sizeof(struct iphdr)) {
         throw std::runtime_error("Payload too short for IP header");
     }
 
-    const struct iphdr* ipHeader = reinterpret_cast<const struct iphdr*>(ipv4Data);
+    auto ipHeader = reinterpret_cast<const struct iphdr*>(ipv4Data);
     
     if (ipHeader->ihl < 5) {
         throw std::runtime_error("Invalid IP header length (IHL < 5)");
@@ -28,11 +28,13 @@ void IPv4Datagram::parse() {
 
     this->total_length = ntohs(ipHeader->tot_len);
     
-    char srcIp[INET_ADDRSTRLEN];
-    char destIp[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(ipHeader->saddr), srcIp, INET_ADDRSTRLEN);
-    inet_ntop(AF_INET, &(ipHeader->daddr), destIp, INET_ADDRSTRLEN);
+    char srcIpBuf[INET_ADDRSTRLEN];
+    char destIpBuf[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(ipHeader->saddr), srcIpBuf, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ipHeader->daddr), destIpBuf, INET_ADDRSTRLEN);
 
+    this->srcIp = ipHeader->saddr;
+    this->destIp = ipHeader->daddr;
     this->version = ipHeader->version;
     this->header_length = ipHeader->ihl;
     this->service_type = ipHeader->tos;
@@ -40,8 +42,8 @@ void IPv4Datagram::parse() {
     this->ttl = ipHeader->ttl;
     this->protocol = ipHeader->protocol;
     this->checksum = ntohs(ipHeader->check);
-    this->src = std::string(srcIp);
-    this->dest = std::string(destIp);
+    this->src = std::string(srcIpBuf);
+    this->dest = std::string(srcIpBuf);
 
     const uint8_t* nextPayLoadStart = ipv4Data + headerSize;
     std::size_t nextPayloadSize = totalPayloadLen - headerSize;
@@ -49,19 +51,23 @@ void IPv4Datagram::parse() {
     this->parseNext(nextPayLoadStart, nextPayloadSize);
 }
 
-void IPv4Datagram::parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) {
+void IPv4Datagram::parseNext(const uint8_t* nextPayload, std::size_t nextPayloadSize) {
+    if (!this->nextLayer) return;
+
     switch (this->protocol) {
-        case IPPROTO_UDP:
-            this->nextLayer = std::make_shared<UdpDatagram>(nextPayload,nextPayloadSize);
-            this->nextLayer->parse();
-            break;
-        case IPPROTO_TCP:
-            this->nextLayer = std::make_shared<TCPHeader>(nextPayload,nextPayloadSize);
-            this->nextLayer->parse();
-            break;
-        default:
-            this->nextLayer = nullptr;
-            break;
+    case IPPROTO_UDP:
+        this->nextLayer->init(nextPayload, nextPayloadSize);
+        this->nextLayer->parse();
+        break;
+
+    case IPPROTO_TCP:
+        this->nextLayer->init(nextPayload, nextPayloadSize);
+        this->nextLayer->parse();
+        break;
+
+    default:
+        this->nextLayer = nullptr;
+        break;
     }
 }
 
@@ -82,7 +88,7 @@ nlohmann::json IPv4Datagram::serialize() const {
 }
 
 std::shared_ptr<IPv4Datagram> IPv4Datagram::deserialize(const nlohmann::json &j) {
-    auto datagram = std::make_shared<IPv4Datagram>(nullptr, 0);
+    auto datagram = std::make_shared<IPv4Datagram>();
         
     if (j.contains("version")) datagram->version = j["version"];
     if (j.contains("header_len")) datagram->header_length = j["header_len"];

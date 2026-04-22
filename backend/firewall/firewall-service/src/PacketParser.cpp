@@ -1,74 +1,105 @@
 #include "../headers/PacketParser.h"
 #include <memory>
 
-void PacketParser::printL2Layer(PacketParser::PduType type) {
-    auto pdu = this->pdus[type];
-    if(pdu) {
-        auto frame = std::dynamic_pointer_cast<EthernetFrame>(pdu);
-        if(frame) {
-            std::cout << *frame << std::endl;
-        }
+
+
+void PacketParser::initParser(const uint8_t* payload, size_t len) {
+    this->rawData = payload;
+    this->rawLen = len;
+    this->initPDUS();
+}
+
+void PacketParser::printL2Layer() {
+    if (pdus[PduType::ETHERNETFRAME]) {
+        std::cout << ethObj << "\n";
     }
 }
 
-void PacketParser::printL3Layer(PacketParser::PduType type) {
-    auto pdu = this->pdus[type];
-    if(pdu) {
-        if(auto ipv4Datagram = std::dynamic_pointer_cast<IPv4Datagram>(pdu)) {
-             std::cout << *ipv4Datagram << std::endl;
-        }
+void PacketParser::printL3Layer() {
+    if (pdus[PduType::IPV4DATAGRAM]) {
+        std::cout << ipv4Obj << "\n";
     }
 }
 
-void PacketParser::printL4Layer(PacketParser::PduType type) {
-    auto pdu = this->pdus[type];
-    if(pdu) {
-        if(auto udpDatagram = std::dynamic_pointer_cast<UdpDatagram>(pdu)) {
-             std::cout << *udpDatagram << std::endl;
-        }
-        if(auto tcp = std::dynamic_pointer_cast<TCPHeader>(pdu)) {
-             std::cout << *tcp << std::endl;
-        }
+void PacketParser::printL4Layer() {
+    if (pdus[PduType::UDPDATAGRAM]) {
+        std::cout << udpObj << "\n";
+    } else if (pdus[PduType::TCPPACKET]) {
+        std::cout << tcpObj << "\n";
     }
 }
-
 
 void PacketParser::initPDUS() {
     if (rawLen == 0 || rawData == nullptr) return;
-    for(int i = 0; i <= 3; ++i) this->pdus[i] = nullptr;
-    std::shared_ptr<AbstractPDU> l3Layer = nullptr;
+    for (int i = 0; i < 4; ++i) this->pdus[i] = nullptr;
 
-    try {
+    const uint8_t* currentData = rawData;
+    size_t currentLen = rawLen;
 
-        if (rawData[0] == 0x45 || (rawData[0] & 0xF0) == 0x60) {
-            auto ipv4 = std::make_shared<IPv4Datagram>(rawData, rawLen);
-            ipv4->parse();
-            pdus[PduType::IPV4DATAGRAM] = ipv4;
-            l3Layer = ipv4;
-        } 
-        else {
-            auto frame = std::make_shared<EthernetFrame>(rawData, rawLen);
-            frame->parse(); 
-            pdus[PduType::ETHERNETFRAME] = frame;
-            l3Layer = frame->getNextLayer();
-            
-            if (auto ipv4 = std::dynamic_pointer_cast<IPv4Datagram>(l3Layer)) {
-                pdus[PduType::IPV4DATAGRAM] = ipv4;
-            }
-        }
+    if (rawLen < 14) return;
 
-        if (l3Layer) {
-            auto l4Layer = l3Layer->getNextLayer();
-            if (l4Layer) {
-                if (auto udp = std::dynamic_pointer_cast<UdpDatagram>(l4Layer)) {
-                    pdus[PduType::UDPDATAGRAM] = udp;
-                }
-                else if (auto tcp = std::dynamic_pointer_cast<TCPHeader>(l4Layer)) {
-                    pdus[PduType::TCPPACKET] = tcp;
-                }
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Packet type wasnt detected\n";
+    uint8_t version = (rawData[0] >> 4) & 0x0F;
+
+    if (version == 4 && (rawData[0] & 0x0F) >= 5) {
+        this->ipv4Obj.init(rawData, rawLen);
+        this->ipv4Obj.parse();
+        this->pdus[PduType::IPV4DATAGRAM] = &this->ipv4Obj;
     }
+    else {
+        this->ethObj.init(rawData, rawLen);
+        this->ethObj.parse();
+        this->pdus[PduType::ETHERNETFRAME] = &this->ethObj;
+
+        if (this->ethObj.getEtherType() == 0x0800 && rawLen > 14 + 20) {
+            this->ipv4Obj.init(rawData + 14, rawLen - 14);
+            this->ipv4Obj.parse();
+            this->pdus[PduType::IPV4DATAGRAM] = &this->ipv4Obj;
+        }
+    }
+
+    if (this->pdus[PduType::IPV4DATAGRAM] != nullptr) {
+        uint8_t protocol = this->ipv4Obj.getProtocol();
+
+        const uint8_t* l4Data = this->ipv4Obj.getPayload();
+        size_t l4Len = this->ipv4Obj.getPayloadSize();
+
+        if (protocol == 17) {
+            this->udpObj.init(l4Data, l4Len);
+            this->udpObj.parse();
+            this->pdus[PduType::UDPDATAGRAM] = &this->udpObj;
+        }
+        else if (protocol == 6) {
+            this->tcpObj.init(l4Data, l4Len);
+            this->tcpObj.parse();
+            this->pdus[PduType::TCPPACKET] = &this->tcpObj;
+        }
+    }
+}
+
+[[nodiscard]] CombinedLogRecord PacketParser::getCombinedRecord(bool verdict) const {
+    CombinedLogRecord record{};
+
+    record.timestamp = static_cast<uint32_t>(std::time(nullptr));
+    record.verdict = verdict ? 1 : 0;
+
+    if (this->pdus[PduType::ETHERNETFRAME]) {
+        record.hasl2 = true;
+        record.eth = this->ethObj.getDTO();
+    }
+
+    if (this->pdus[PduType::IPV4DATAGRAM]) {
+        record.hasl3 = true;
+        record.ip = this->ipv4Obj.getDTO();
+    }
+
+    if (this->pdus[PduType::TCPPACKET]) {
+        record.l4Type = L4Type::TCP;
+        record.l4.tcp = this->tcpObj.getDTO();
+    }
+    else if (this->pdus[PduType::UDPDATAGRAM]) {
+        record.l4Type = L4Type::UDP;
+        record.l4.udp = this->udpObj.getDTO();
+    }
+
+    return record;
 }

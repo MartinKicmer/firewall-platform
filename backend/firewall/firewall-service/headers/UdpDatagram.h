@@ -8,18 +8,17 @@
 #include <netinet/ip.h>    
 #include <arpa/inet.h>  
 #include <nlohmann/json.hpp>
+#include  "DTOS.h"
 class UdpDatagram : public AbstractPDU {
 public:
-    UdpDatagram(
-        const uint8_t* payload_,
-        std::size_t payloadLen_) : AbstractPDU(payload_,payloadLen_) {}
+    UdpDatagram() : AbstractPDU() {}
     
     void parse() override;
-    void parseNext(const uint8_t* nextPayload,std::size_t nextPayloadSize) override;
-    uint16_t getSourcePort() const { return this->sPort; }
-    uint16_t getDestPort() const { return this->dPort; }
-    uint16_t getLen() const { return this->len; }
-    uint16_t getChecksum() const { return this->checksum; }
+    void parseNext(const uint8_t* /*nextPayload*/, std::size_t /*nextPayloadSize*/) override {};
+    [[nodiscard]] uint16_t getSourcePort() const { return this->sPort; }
+    [[nodiscard]] uint16_t getDestPort() const { return this->dPort; }
+    [[nodiscard]] uint16_t getLen() const { return this->len; }
+    [[nodiscard]] uint16_t getChecksum() const { return this->checksum; }
 
 
     friend std::ostream& operator<<(std::ostream& o, const UdpDatagram& u ) {
@@ -31,10 +30,19 @@ public:
         return o;
     }
 
-    nlohmann::json serialize() const;
+    [[nodiscard]] nlohmann::json serialize() const;
+
+    [[nodiscard]] UdpDTO getDTO() const {
+        return UdpDTO {
+            sPort,
+            dPort,
+            len,
+            checksum
+        };
+    }
 private:
-    uint16_t sPort;
-    uint16_t dPort;
-    uint16_t len;
-    uint16_t checksum;
+    uint16_t sPort = 0;
+    uint16_t dPort = 0;
+    uint16_t len = 0;
+    uint16_t checksum = 0;
 };

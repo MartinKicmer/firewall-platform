@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 23)
 
 find_package(nlohmann_json REQUIRED)
 find_package(Curses REQUIRED)
+find_package(spdlog REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/headers)
 
@@ -35,7 +36,10 @@ add_executable(packet-blocker
   ../../firewall-service/headers/IPv4Datagram.h
   ../../firewall-service/headers/UdpDatagram.h
   ../../firewall-service/headers/TCPHeader.h
+        ../../firewall-service/headers/DTOS.h
+        headers/FileMonitor.h
+        src/FileMonitor.cpp
   
 )
 target_include_directories(packet-blocker PRIVATE ${CURSES_INCLUDE_DIRS})
-target_link_libraries(packet-blocker PRIVATE nlohmann_json::nlohmann_json PRIVATE ${CURSES_LIBRARIES})
+target_link_libraries(packet-blocker PRIVATE nlohmann_json::nlohmann_json PRIVATE ${CURSES_LIBRARIES} spdlog::spdlog)
