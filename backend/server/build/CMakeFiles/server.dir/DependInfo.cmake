@@ -8,10 +8,10 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/martinkicmer/Desktop/firewall-platform/backend/server/src/PacketBlockerGateway.cpp" "CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o" "gcc" "CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o.d"
-  "/home/martinkicmer/Desktop/firewall-platform/backend/server/src/ServerHandler.cpp" "CMakeFiles/server.dir/src/ServerHandler.cpp.o" "gcc" "CMakeFiles/server.dir/src/ServerHandler.cpp.o.d"
-  "/home/martinkicmer/Desktop/firewall-platform/backend/server/src/WebSocketService.cpp" "CMakeFiles/server.dir/src/WebSocketService.cpp.o" "gcc" "CMakeFiles/server.dir/src/WebSocketService.cpp.o.d"
-  "/home/martinkicmer/Desktop/firewall-platform/backend/server/src/main.cpp" "CMakeFiles/server.dir/src/main.cpp.o" "gcc" "CMakeFiles/server.dir/src/main.cpp.o.d"
+  "/home/pi/firewall-platform/backend/server/src/PacketBlockerGateway.cpp" "CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o" "gcc" "CMakeFiles/server.dir/src/PacketBlockerGateway.cpp.o.d"
+  "/home/pi/firewall-platform/backend/server/src/ServerHandler.cpp" "CMakeFiles/server.dir/src/ServerHandler.cpp.o" "gcc" "CMakeFiles/server.dir/src/ServerHandler.cpp.o.d"
+  "/home/pi/firewall-platform/backend/server/src/WebSocketService.cpp" "CMakeFiles/server.dir/src/WebSocketService.cpp.o" "gcc" "CMakeFiles/server.dir/src/WebSocketService.cpp.o.d"
+  "/home/pi/firewall-platform/backend/server/src/main.cpp" "CMakeFiles/server.dir/src/main.cpp.o" "gcc" "CMakeFiles/server.dir/src/main.cpp.o.d"
   "" "server" "gcc" "CMakeFiles/server.dir/link.d"
   )
 

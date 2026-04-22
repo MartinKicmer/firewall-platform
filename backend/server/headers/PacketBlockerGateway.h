@@ -4,6 +4,7 @@
 #include <atomic>
 #include <mutex>
 #include "RequestTypes.h"
+#include <nlohmann/json.hpp>
 #include "WebSocketService.h"
 class PacketBlockerGateway {
 public:

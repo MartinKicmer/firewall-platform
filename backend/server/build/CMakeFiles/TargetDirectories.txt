@@ -1,3 +1,3 @@
-/home/martinkicmer/Desktop/firewall-platform/backend/server/build/CMakeFiles/server.dir
-/home/martinkicmer/Desktop/firewall-platform/backend/server/build/CMakeFiles/edit_cache.dir
-/home/martinkicmer/Desktop/firewall-platform/backend/server/build/CMakeFiles/rebuild_cache.dir
+/home/pi/firewall-platform/backend/server/build/CMakeFiles/server.dir
+/home/pi/firewall-platform/backend/server/build/CMakeFiles/edit_cache.dir
+/home/pi/firewall-platform/backend/server/build/CMakeFiles/rebuild_cache.dir
