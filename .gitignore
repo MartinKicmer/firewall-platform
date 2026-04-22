@@ -5,5 +5,7 @@ frontend/fireWallClient/node_modules/
 frontend/fireWallClient/.env
 frontend/fireWallClient/.vscode
 frontend/fireWallClient/home/martinkicmer/.ssh
+firewall-platform/backend/server/build 
+
 .vscode/
 .idea
