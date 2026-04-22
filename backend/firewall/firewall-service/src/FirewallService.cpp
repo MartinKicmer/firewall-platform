@@ -17,6 +17,7 @@
 static bool END_DEBUG = false;
 void debug_handler(int signum) {
     END_DEBUG = true;
+
 }
 
 
@@ -47,7 +48,6 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
 
     if (len >= 0) {
         try {
-
             fw->packetParser->initParser(payload,len);
             fw->filterList->setParser(fw->packetParser);
             if (fw->filterList->getRules().empty()) {
@@ -60,11 +60,6 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
             }
             auto blockingRule = fw->filterList->checkAllRules();
             if (blockingRule != nullptr) {
-                if (blockingRule->shouldIgnore()) std::cout << "IGNORING PACKET\n\n\n\n" << std::endl;
-                if (!blockingRule->shouldIgnore()) {
-                    std::cout << "!!! PACKET BLOCKED !!!" << std::endl;
-                    fw->filterList->printFilterRuleInfo(blockingRule);
-                }
                 permit = blockingRule->shouldIgnore() ? true : false;
             }
             if (fw->debugModeActive()) {
@@ -99,7 +94,7 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
     if (permit) {
         std::cout << "-------\nPACKET PASSED\n-------" << std::endl;
     }
-
+    std::cout << "DEBUG: Verdict sent, after parsing rules: " << permit << std::endl;
     return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
 }
 

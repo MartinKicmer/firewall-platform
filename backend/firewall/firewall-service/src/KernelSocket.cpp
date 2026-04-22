@@ -58,7 +58,16 @@ void KernelSocket::recieveData() {
 }
 
 void KernelSocket::run() {
-    while (true) {
+    while (!FirewallService::STOP_DEBUG()) {
         this->recieveData();
     }
+    if (this->service->debugModeActive()) {
+        std::cout << "Waiting for Debug Thread cleanup...\n";
+        if (this->service->getDebugThread().joinable()) {
+            this->service->getDebugThread().join();
+        }
+    }
+
+    std::cout << "All systems shut down. Exiting.\n";
+    std::exit(EXIT_SUCCESS);
 }

@@ -69,6 +69,7 @@ public:
 
     LoggingBuffer& getLogBuffer() { return  this->logBuffer; }
     [[nodiscard]] bool debugModeActive() const { return this->debug; }
+    std::thread& getDebugThread() { return this->debugThread; }
     static bool STOP_DEBUG();
 private:
     [[nodiscard]] std::unique_ptr<FirewallService::Config> loadFromConfig(const std::string& standardPath) const;
