@@ -7,7 +7,6 @@ void PacketRedirector::redirectPacket(std::shared_ptr<PacketParser> parser) {
     try {
         connector.connect();
         auto redirectRule = std::dynamic_pointer_cast<RedirectRule>(this->rule->getRule());
-        std::cout << "LAYER : " << redirectRule->layer  << "\n\n\n\n\n\n\n\n"<< std::endl;
         if(redirectRule->layer == "L2") {
             auto frame = parser->getEthernetFrame();
             if(frame) {

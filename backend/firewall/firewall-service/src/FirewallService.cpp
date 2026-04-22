@@ -50,7 +50,7 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
         try {
             fw->packetParser->initParser(payload,len);
             fw->filterList->setParser(fw->packetParser);
-            if (fw->filterList->getRules().empty()) {
+            if (fw->filterList->getRules().empty() && !fw->packetRedirector->canRedirect() ) {
                 if (fw->debugModeActive()) {
                     auto& logBuf = fw->getLogBuffer();
                     auto record = fw->packetParser->getCombinedRecord(true);
