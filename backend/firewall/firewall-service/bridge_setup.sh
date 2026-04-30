@@ -26,8 +26,8 @@ echo "[*] Starting Firewall Bridge Setup..."
 echo "[*] Config file  : $CONFIG_FILE"
 echo "[*] Target queues: $X_QUEUES (Range: $QUEUE_RANGE)"
 
-INPUT_IF=$(grep "interface:" "$CONFIG_FILE" | grep "input" | awk '{print $2}' | xargs)
-OUTPUT_IF=$(grep "interface:" "$CONFIG_FILE" | grep "output" | awk '{print $2}' | xargs)
+INPUT_IF=$(grep "interface:" "$CONFIG_FILE" | grep "input" | awk -F'[: ,]+' '{print $2}')
+OUTPUT_IF=$(grep "interface:" "$CONFIG_FILE" | grep "output" | awk -F'[: ,]+' '{print $2}')
 
 if [ -z "$INPUT_IF" ] || [ -z "$OUTPUT_IF" ]; then
     echo "[!] Could not parse interfaces. Check your config file format."

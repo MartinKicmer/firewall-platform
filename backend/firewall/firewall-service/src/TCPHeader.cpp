@@ -14,13 +14,13 @@ void TCPHeader::parse() {
     auto tcpHeader = reinterpret_cast<const struct tcphdr*>(data);
 
     uint8_t headerLength = tcpHeader->doff * 4;
-
+/*
     if (this->payloadSize < headerLength) {
         std::cerr << "[TCP Error] Payload size: " << this->payloadSize
                   << ", Header indicates: " << headerLength << " bytes" << std::endl;
         throw std::runtime_error("Payload smaller than TCP header offset indicates (Options truncated?)\n");
     }
-
+*/
     this->sPort      = ntohs(tcpHeader->source);
     this->dPort      = ntohs(tcpHeader->dest);
     this->seqNumber  = ntohl(tcpHeader->seq);

@@ -54,7 +54,7 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
                 if (fw->debugModeActive()) {
                     auto& logBuf = fw->getLogBuffer();
                     auto record = fw->packetParser->getCombinedRecord(true);
-                    logBuf.write(record);
+                    logBuf.write(record); 
                 }
                 return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
             }

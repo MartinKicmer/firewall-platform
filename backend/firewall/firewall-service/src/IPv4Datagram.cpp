@@ -43,7 +43,7 @@ void IPv4Datagram::parse() {
     this->protocol = ipHeader->protocol;
     this->checksum = ntohs(ipHeader->check);
     this->src = std::string(srcIpBuf);
-    this->dest = std::string(srcIpBuf);
+    this->dest = std::string(destIpBuf);
 
     const uint8_t* nextPayLoadStart = ipv4Data + headerSize;
     std::size_t nextPayloadSize = totalPayloadLen - headerSize;
