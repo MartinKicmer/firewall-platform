@@ -46,33 +46,25 @@ void PacketParser::initPDUS() {
         this->pdus[PduType::IPV4DATAGRAM] = &this->ipv4Obj;
     }
     else {
-        this->ethObj.init(rawData, rawLen);
-        this->ethObj.parse();
-        this->pdus[PduType::ETHERNETFRAME] = &this->ethObj;
-
-        if (this->ethObj.getEtherType() == 0x0800 && rawLen > 14 + 20) {
-            this->ipv4Obj.init(rawData + 14, rawLen - 14);
-            this->ipv4Obj.parse();
-            this->pdus[PduType::IPV4DATAGRAM] = &this->ipv4Obj;
-        }
+        return;
     }
 
     if (this->pdus[PduType::IPV4DATAGRAM] != nullptr) {
         uint8_t protocol = this->ipv4Obj.getProtocol();
 
-        const uint8_t* l4Data = this->ipv4Obj.getPayload();
-        size_t l4Len = this->ipv4Obj.getPayloadSize();
+        const uint8_t* l4Data = this->ipv4Obj.getPayload() + (this->ipv4Obj.getHeaderLen() * 4);
+    	size_t l4Len = this->ipv4Obj.getPayloadSize() - (this->ipv4Obj.getHeaderLen() * 4);
 
-        if (protocol == 17) {
-            this->udpObj.init(l4Data, l4Len);
-            this->udpObj.parse();
-            this->pdus[PduType::UDPDATAGRAM] = &this->udpObj;
-        }
-        else if (protocol == 6) {
-            this->tcpObj.init(l4Data, l4Len);
-            this->tcpObj.parse();
-            this->pdus[PduType::TCPPACKET] = &this->tcpObj;
-        }
+   	 if (protocol == 17) { // UDP
+        	this->udpObj.init(l4Data, l4Len);
+        	this->udpObj.parse();
+        	this->pdus[PduType::UDPDATAGRAM] = &this->udpObj;
+    	 }
+    	 else if (protocol == 6) { // TCP
+        	this->tcpObj.init(l4Data, l4Len);
+       		this->tcpObj.parse();
+        	this->pdus[PduType::TCPPACKET] = &this->tcpObj;
+    	 }
     }
 }
 

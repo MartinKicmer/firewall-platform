@@ -42,58 +42,45 @@ int FirewallService::handlePacketCallback(struct nfq_q_handle* qh,
 
     unsigned char* payload;
     int len = nfq_get_payload(nfa, &payload);
-    
-
     bool permit = true;
 
     if (len >= 0) {
         try {
-            fw->packetParser->initParser(payload,len);
+            fw->packetParser->initParser(payload, len);
             fw->filterList->setParser(fw->packetParser);
-            if (fw->filterList->getRules().empty() && !fw->packetRedirector->canRedirect() ) {
-                if (fw->debugModeActive()) {
-                    auto& logBuf = fw->getLogBuffer();
-                    auto record = fw->packetParser->getCombinedRecord(true);
-                    logBuf.write(record); 
-                }
-                return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
-            }
+
             auto blockingRule = fw->filterList->checkAllRules();
             if (blockingRule != nullptr) {
-                permit = blockingRule->shouldIgnore() ? true : false;
+                permit = blockingRule->shouldIgnore(); 
             }
             if (fw->debugModeActive()) {
                 auto& logBuf = fw->getLogBuffer();
                 auto record = fw->packetParser->getCombinedRecord(permit);
                 logBuf.write(record);
             }
-            if (fw->packetRedirector->canRedirect()) {
-                if (blockingRule) {
-                    if (blockingRule->shouldIgnore()) {
-                        return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
-                    }
-                }
+
+            if (permit && fw->packetRedirector->canRedirect()) {
                 auto ruleWrap = fw->packetRedirector->getRule();
+                
                 if (ruleWrap && ruleWrap->getRule()) {
                     if ((ruleWrap->getRule()->permit && !blockingRule) ||
                         (!ruleWrap->getRule()->permit && blockingRule)) {
-                            fw->packetRedirector->redirectPacket(fw->packetParser);
-                        }
+                        
+                        fw->packetRedirector->redirectPacket(fw->packetParser);
+                    }
                 }
-
             }
 
         } catch (const std::exception& e) {
-            std::cerr << "Parser error (ignoring for safety): " << e.what() << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::cerr << "Parser error: " << e.what() << std::endl;
+            permit = false; 
         } catch (...) {
-            std::cerr << "Unknown critical error in callback logic!" << std::endl;
-            std::exit(EXIT_FAILURE);
+            std::cerr << "Unknown critical error in callback!" << std::endl;
+            permit = false;
         }
     }
     return nfq_set_verdict(qh, id, permit ? NF_ACCEPT : NF_DROP, 0, nullptr);
 }
-
 
 FirewallService::~FirewallService() {
     if(this->packetBlockerT.joinable()) {

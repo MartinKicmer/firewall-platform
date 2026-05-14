@@ -23,11 +23,21 @@ bool L3Rule::match(std::shared_ptr<PacketParser> parser)  {
 }
 
 bool L4SimpleRule::match(std::shared_ptr<PacketParser> parser) {
-    auto udpDatagram = parser->getUDPDatagram();
-    if(!udpDatagram) return false;
+    int currentSPort = -1;
+    int currentDPort = -1;
 
-    bool sourcePortMatch = (this->sPort == -1 || this->sPort == udpDatagram->getSourcePort() );
-    bool destPortMatch = (this->dPort == -1 || this->dPort == udpDatagram->getDestPort());
+    if (auto tcp = parser->getTCPPACKET()) {
+        currentSPort = tcp->getSourcePort();
+        currentDPort = tcp->getDestPort();
+    } else if (auto udp = parser->getUDPDatagram()) {
+	currentSPort = udp->getSourcePort();
+        currentDPort = udp->getDestPort();
+    } else {
+        return false; 
+    }
+
+    bool sourcePortMatch = (this->sPort == -1 || this->sPort == currentSPort);
+    bool destPortMatch = (this->dPort == -1 || this->dPort == currentDPort);
 
     return (sourcePortMatch && destPortMatch);
 }
@@ -39,9 +49,9 @@ bool L4TcpRule::match(std::shared_ptr<PacketParser> parser) {
     bool sourcePortMatch = (this->sPort == -1 || this->sPort == tcp->getSourcePort() );
     bool destPortMatch = (this->dPort == -1 || this->dPort == tcp->getDestPort());
     bool windowSizeMatch = ((this->minWindow == -1 || this->maxWindow == -1) || (tcp->getWindowSize() >= this->minWindow && tcp->getWindowSize() <= this->maxWindow));
-    bool synMatch = (this->flags & TH_SYN) == tcp->isSyn();
-    bool ackMatch = (this->flags & TH_ACK) == tcp->isAck();
-    bool finMatch = (this->flags & TH_FIN) == tcp->isFin();
-    bool flagsMatch = synMatch || ackMatch || finMatch;
+    bool synMatch = !(this->flags & TH_SYN) || tcp->isSyn();
+    bool ackMatch = !(this->flags & TH_ACK) || tcp->isAck();
+    bool finMatch = !(this->flags & TH_FIN) || tcp->isFin();
+    bool flagsMatch = synMatch && ackMatch && finMatch;
     return (sourcePortMatch && destPortMatch && windowSizeMatch && flagsMatch);
 }
