@@ -16,6 +16,7 @@ public:
         this->protocols["UDP"] = 17;
         this->protocols["ICMP"] = 1;
         this->protocols["TCP"] = 6;
+	this->protocols["any"] = -1;
 
         this->monitor = std::make_shared<FileMonitor>("../../firewall-service/debug.bin");
     }
